@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مفاجأة الليل لـ مها ✨ | من فارس</title>
+    <style>
+        /* ==========================================================================
+           1. المتغيرات اللونية والتنسيقات الأساسية للتصميم الليلي الساحر
+           ========================================================================== */
+        :root {
+            --bg-void: #070410;
+            --bg-nebula: #160a2c;
+            --pink-glow: #ff2a85;
+            --pink-soft: #ff85b8;
+            --purple-glow: #9d4edd;
+            --gold-star: #ffd166;
+            --text-light: #fff5f9;
+            --glass-bg: rgba(20, 10, 42, 0.78);
+            --glass-border: rgba(255, 42, 133, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 35%, var(--bg-nebula) 0%, var(--bg-void) 100%);
+            color: var(--text-light);
+            font-family: system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+        }
+
+        /* لوحة الرسم التفاعلية ملء الشاشة */
+        #nightSkyCanvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 1;
+            touch-action: none;
+        }
+
+        /* ==========================================================================
+           2. واجهة المستخدم العلوية العائمة (HUD)
+           ========================================================================== */
+        .hud-bar {
+            position: fixed;
+            top: 14px;
+            left: 14px;
+            right: 14px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .hud-pill {
+            pointer-events: auto;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            padding: 8px 16px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-light);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 12px rgba(255, 42, 133, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            pointer-events: auto;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            font-size: 17px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .btn-icon:active {
+            transform: scale(0.9);
+        }
+
+        /* ==========================================================================
+           3. شريط التلميح السفلي
+           ========================================================================== */
+        .hint-banner {
+            position: fixed;
+            bottom: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            width: max-content;
+            max-width: 92vw;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(157, 78, 221, 0.45);
+            padding: 10px 20px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            color: #f3e8ff;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        /* ==========================================================================
+           4. البطاقات المنبثقة (البداية، الكشف عن الكوكبة، والنهاية الكبرى)
+           ========================================================================== */
+        .overlay-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 30;
+            background: rgba(7, 4, 16, 0.72);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            transition: opacity 0.4s ease;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .magic-card {
+            width: 100%;
+            max-width: 440px;
+            background: linear-gradient(160deg, rgba(30, 14, 62, 0.94) 0%, rgba(13, 6, 28, 0.97) 100%);
+            border: 1.5px solid rgba(255, 42, 133, 0.55);
+            border-radius: 28px;
+            padding: 28px 22px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75), 0 0 35px rgba(255, 42, 133, 0.25);
+            animation: cardAppear 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes cardAppear {
+            0% { opacity: 0; transform: scale(0.86) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .badge-glow {
+            display: inline-block;
+            padding: 5px 14px;
+            border-radius: 999px;
+            background: rgba(255, 42, 133, 0.18);
+            border: 1px solid rgba(255, 42, 133, 0.5);
+            color: var(--pink-soft);
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #fff, #ff85b8, #ffd166);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .poem-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 209, 102, 0.28);
+            border-radius: 20px;
+            padding: 18px 14px;
+            margin: 16px 0;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 18px;
+            line-height: 1.95;
+            color: #fff0f6;
+            text-shadow: 0 0 12px rgba(255, 42, 133, 0.3);
+        }
+
+        .card-desc {
+            font-size: 14px;
+            line-height: 1.75;
+            color: #d8b4fe;
+            margin-bottom: 20px;
+        }
+
+        .btn-glow {
+            width: 100%;
+            padding: 14px 22px;
+            border: none;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--pink-glow) 0%, var(--purple-glow) 100%);
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(255, 42, 133, 0.45);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .btn-glow:hover {
+            box-shadow: 0 10px 32px rgba(255, 42, 133, 0.65);
+        }
+
+        .btn-glow:active {
+            transform: scale(0.96);
+        }
+
+        .btn-secondary {
+            margin-top: 10px;
+            width: 100%;
+            padding: 11px 18px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #e9d5ff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- لوحة السماء الليلية التفاعلية -->
+    <canvas id="nightSkyCanvas"></canvas>
+
+    <!-- شريط المعلومات العلوي -->
+    <div class="hud-bar">
+        <div class="hud-pill">
+            <span>🌌</span>
+            <span id="stageIndicator">الكوكبة 1 من 4</span>
+        </div>
+        <button id="soundToggleBtn" class="btn-icon" title="تشغيل / كتم الصوت" aria-label="الصوت">🔊</button>
+    </div>
+
+    <!-- تلميح تفاعلي في الأسفل -->
+    <div id="hintBanner" class="hint-banner">
+        مرّري إصبعكِ أو الماوس بين النجوم المضيئة بالترتيب ✨
+    </div>
+
+    <!-- شاشة الترحيب والمفاجأة -->
+    <div id="welcomeOverlay" class="overlay-screen">
+        <div class="magic-card">
+            <div class="badge-glow">✨ مفاجأة خاصة لـ مها فقط ✨</div>
+            <div style="font-size: 46px; margin-bottom: 8px;">🌙💖</div>
+            <h1 class="card-title">سماءُ أسرارِ فارس ومها</h1>
+            <p class="card-desc">
+                في هذه السماء الليلية خبّأ لكِ فارس <b>4 كوكبات من النجوم</b>..<br>
+                اسحبي إصبعكِ لتوصيل النجوم ببعضها، واكتشفي السرّ المرسوم في كل سماء!
+            </p>
+            <button id="startBtn" class="btn-glow">ابدئي رحلة النجوم ✨</button>
+        </div>
+    </div>
+
+    <!-- نافذة كشف رسالة كل مرحلة -->
+    <div id="revealOverlay" class="overlay-screen hidden">
+        <div class="magic-card">
+            <div id="revealBadge" class="badge-glow">كوكبة #1 مكتملة ✨</div>
+            <div id="revealEmoji" style="font-size: 42px; margin-bottom: 6px;">💫</div>
+            <h2 id="revealTitle" class="card-title">عنوان الكوكبة</h2>
+            <div id="revealPoem" class="poem-box"></div>
+            <p id="revealNote" class="card-desc" style="margin-bottom: 16px; font-size: 13px;"></p>
+            <button id="nextStageBtn" class="btn-glow">انتقلي للسماء التالية 🌠</button>
+        </div>
+    </div>
+
+    <!-- شاشة المفاجأة النهائية الكبرى -->
+    <div id="finalOverlay" class="overlay-screen hidden">
+        <div class="magic-card">
+            <div class="badge-glow">👑 اكتملت سماءُ الحب 👑</div>
+            <div style="font-size: 48px; margin-bottom: 6px;">🎆❤️🎆</div>
+            <h2 class="card-title">إلى أميرةِ السماء.. مها</h2>
+            <div class="poem-box">
+                رسمتُ اسمَكِ الغالي نجوماً تلالأت<br>
+                فأشرقَ ليلي واختفى كلُّ مظلمِ..<br>
+                فأنتِ قمرُ الدنيا ونبضُ قصائدي<br>
+                وأغلى هدايا العمرِ في قلبِ مُغرمِ ❤️
+            </div>
+            <p class="card-desc">
+                كل نجمة في هذه السماء تشهد إنكِ أجمل صدفة وأغلى إنسانة بحياة <b>فارس</b> ✨<br>
+                <span style="color: #ffd166; font-weight: 700;">المسي أي مكان في السماء لإطلاق الألعاب النارية!</span>
+            </p>
+            <button id="celebrateBtn" class="btn-glow">شاهدي سماء الاحتفال 🎇</button>
+            <button id="replayBtn" class="btn-secondary">إعادة رسم النجوم من البداية 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ============================================================================
+         * لعبة "سماءُ أسرارِ فارس ومها" — ملف HTML واحد مستقل تماماً
+         * الفكرة: توصيل النجوم المتوهجة لرسم أشكال رومانسية (هلال، قلب، تاج، واسم مها)
+         * مع فيزياء جزيئات، شُهب عابرة، وأصوات موسيقية ناعمة via Web Audio API.
+         * ============================================================================
+         */
+        (function () {
+            const canvas = document.getElementById('nightSkyCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // عناصر الواجهة
+            const welcomeOverlay = document.getElementById('welcomeOverlay');
+            const revealOverlay = document.getElementById('revealOverlay');
+            const finalOverlay = document.getElementById('finalOverlay');
+            const startBtn = document.getElementById('startBtn');
+            const nextStageBtn = document.getElementById('nextStageBtn');
+            const celebrateBtn = document.getElementById('celebrateBtn');
+            const replayBtn = document.getElementById('replayBtn');
+            const soundToggleBtn = document.getElementById('soundToggleBtn');
+            const stageIndicator = document.getElementById('stageIndicator');
+            const hintBanner = document.getElementById('hintBanner');
+
+            const revealBadge = document.getElementById('revealBadge');
+            const revealEmoji = document.getElementById('revealEmoji');
+            const revealTitle = document.getElementById('revealTitle');
+            const revealPoem = document.getElementById('revealPoem');
+            const revealNote = document.getElementById('revealNote');
+
+            /**
+             * ============================================================================
+             * 1. محرك الصوت البرمجي الناعم (Web Audio API)
+             * ============================================================================
+             */
+            const audio = {
+                ctx: null,
+                muted: false,
+                init() {
+                    if (!this.ctx) {
+                        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                        if (AudioCtx) this.ctx = new AudioCtx();
+                    }
+                    if (this.ctx && this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                },
+                // نغمة موسيقية تصاعدية عند توصيل كل نجمة
+                playStarNote(stepIndex) {
+                    if (this.muted) return;
+                    this.init();
+                    if (!this.ctx) return;
+
+                    // سلم خماسي حالم (Pentatonic scale)
+                    const scale = [392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 1174.66];
+                    const freq = scale[stepIndex % scale.length];
+                    const now = this.ctx.currentTime;
+
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    gain.gain.setValueAtTime(0.001, now);
+                    gain.gain.exponentialRampToValueAtTime(0.16, now + 0.03);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.65);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.68);
+                },
+                // معزوفة احتفالية عند اكتمال الكوكبة
+                playConstellationComplete() {
+                    if (this.muted) return;
+                    this.init();
+                    if (!this.ctx) return;
+
+                    const chord = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                    chord.forEach((freq, i) => {
+                        const start = this.ctx.currentTime + i * 0.11;
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, start);
+
+                        gain.gain.setValueAtTime(0.14, start);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.8);
+
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(start);
+                        osc.stop(start + 0.82);
+                    });
+                },
+                // صوت فرقعة ألعاب نارية ناعمة
+                playFirework() {
+                    if (this.muted) return;
+                    this.init();
+                    if (!this.ctx) return;
+
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(320 + Math.random() * 260, now);
+                    osc.frequency.exponentialRampToValueAtTime(90, now + 0.35);
+
+                    gain.gain.setValueAtTime(0.09, now);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.36);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.38);
+                }
+            };
+
+            /**
+             * ============================================================================
+             * 2. تعريف الكوكبات الأربع (إحداثيات نسبية من -1 إلى 1 لمرونة الشاشة)
+             * ============================================================================
+             */
+            const CONSTELLATIONS = [
+                {
+                    name: "هلالُ اللّقاء الأوّل",
+                    emoji: "🌙",
+                    hint: "ابدئي من النجمة المضيئة واسحبي نحو النجمة التالية لرسم الهلال ✨",
+                    poem: "تلاقَتْ أرواحُنا قبلَ الهلالِ بأيّامٍ<br>فأشرقَ في سماءِ العمرِ نورُكِ يا مها..<br>وصرتِ البدرَ في ليلي وبهجتَهُ<br>وأجملَ صدفةٍ في القلبِ سكناها 🌙💜",
+                    note: "الذكرى الأولى • حين بدأت حكاية فارس ومها قبل رمضان",
+                    // نقاط ترسم هلالاً متألقاً
+                    points: [
+                        { x: 0.18, y: -0.72 },
+                        { x: -0.22, y: -0.58 },
+                        { x: -0.46, y: -0.22 },
+                        { x: -0.46, y: 0.22 },
+                        { x: -0.22, y: 0.58 },
+                        { x: 0.18, y: 0.72 },
+                        { x: -0.06, y: 0.36 },
+                        { x: -0.14, y: 0.00 },
+                        { x: -0.06, y: -0.36 }
+                    ],
+                    closedLoop: true
+                },
+                {
+                    name: "نبضُ قلبِ فارس",
+                    emoji: "💖",
+                    hint: "ارسمي بتوصيل النجوم شكلَ القلب النابض في منتصف السماء 💓",
+                    poem: "سألتُ النجمَ هل في الكونِ أجملُ<br>مِنَ اسمِ «مها» إذا نطقَ اللسانُ؟<br>فقالَ النجمُ: في عينيكِ سِحرٌ<br>يذوبُ أمامَهُ هذا الزمانُ 💖✨",
+                    note: "المرحلة الثانية • قلبٌ لا ينبض إلا باسمك",
+                    // نقاط ترسم قلباً متناسقاً
+                    points: [
+                        { x: 0.00, y: -0.32 },
+                        { x: 0.34, y: -0.62 },
+                        { x: 0.68, y: -0.34 },
+                        { x: 0.56, y: 0.12 },
+                        { x: 0.00, y: 0.68 },
+                        { x: -0.56, y: 0.12 },
+                        { x: -0.68, y: -0.34 },
+                        { x: -0.34, y: -0.62 }
+                    ],
+                    closedLoop: true
+                },
+                {
+                    name: "تاجُ الأميرة ومُنى العالِم",
+                    emoji: "👑",
+                    hint: "صِلي النجوم السبع لتتوّجي أميرة قلب فارس بالتاج الملكي 👑",
+                    poem: "أنا ما بينَ أهلِ العلمِ أُمضي<br>سنيني، والمنى منكِ الوصالُ..<br>فأنتِ التاجُ فوقَ الرأسِ دوماً<br>وفيكِ الحُسنُ يكتملُ والجمالُ 👑🤓",
+                    note: "المرحلة الثالثة • من «أبو أهل العلم والنظارات» إلى ملكته",
+                    // نقاط ترسم تاجاً ملكياً
+                    points: [
+                        { x: -0.58, y: 0.38 },
+                        { x: -0.68, y: -0.28 },
+                        { x: -0.30, y: 0.05 },
+                        { x: 0.00, y: -0.45 },
+                        { x: 0.30, y: 0.05 },
+                        { x: 0.68, y: -0.28 },
+                        { x: 0.58, y: 0.38 }
+                    ],
+                    closedLoop: true
+                },
+                {
+                    name: "نجمةُ «مها» الخالدة",
+                    emoji: "🌟",
+                    hint: "الكوكبة الأخيرة! صِلي النجوم لتكتمل نجمة مها الساطعة 🌟",
+                    poem: "جمعتِ النورَ في كفّيكِ حتّى<br>غدتْ كلُّ الكواكبِ في مدارِك..<br>فيا «يروحي» ويا سكنَ الفؤادِ<br>فداكِ العمرُ في ليلِكِ ونهارِك 🌟❤️",
+                    note: "المرحلة الأخيرة • اكتملت السماء باسمكِ يا أغلى البشر",
+                    // نقاط ترسم نجمة خماسية متألقة
+                    points: [
+                        { x: 0.00, y: -0.72 },
+                        { x: 0.22, y: -0.20 },
+                        { x: 0.74, y: -0.16 },
+                        { x: 0.34, y: 0.18 },
+                        { x: 0.48, y: 0.70 },
+                        { x: 0.00, y: 0.40 },
+                        { x: -0.48, y: 0.70 },
+                        { x: -0.34, y: 0.18 },
+                        { x: -0.74, y: -0.16 },
+                        { x: -0.22, y: -0.20 }
+                    ],
+                    closedLoop: true
+                }
+            ];
+
+            /**
+             * ============================================================================
+             * 3. حالة اللعبة والمتغيرات الفيزيائية
+             * ============================================================================
+             */
+            const state = {
+                width: 0,
+                height: 0,
+                dpr: 1,
+                currentStage: 0,
+                connectedCount: 0, // عدد النجوم المتصلة في الكوكبة الحالية
+                stars: [], // النجوم الفعلية بإحداثيات البكسل
+                bgStars: [], // نجوم الخلفية المتلألئة
+                shootingStars: [], // شهب عابرة
+                particles: [], // شرارات وجزيئات متوهجة
+                pointer: { x: 0, y: 0, active: false },
+                mode: 'welcome', // welcome | playing | reveal | celebration
+                lastTime: 0,
+                fireworkTimer: 0
+            };
+
+            /**
+             * ضبط أبعاد الكانفس بدقة عالية (Retina / HiDPI) وتحديث مواقع النجوم
+             */
+            function resizeCanvas() {
+                state.dpr = Math.min(window.devicePixelRatio || 1, 2);
+                state.width = window.innerWidth;
+                state.height = window.innerHeight;
+                canvas.width = state.width * state.dpr;
+                canvas.height = state.height * state.dpr;
+                ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+
+                if (state.bgStars.length === 0) {
+                    initBackgroundStars();
+                }
+                if (state.stars.length > 0) {
+                    positionConstellationStars();
+                }
+            }
+
+            /**
+             * إنشاء نجوم الخلفية المتلألئة
+             */
+            function initBackgroundStars() {
+                state.bgStars = [];
+                const count = Math.min(130, Math.floor((state.width * state.height) / 6500));
+                for (let i = 0; i < count; i++) {
+                    state.bgStars.push({
+                        x: Math.random() * state.width,
+                        y: Math.random() * state.height,
+                        radius: 0.6 + Math.random() * 1.8,
+                        phase: Math.random() * Math.PI * 2,
+                        speed: 1.2 + Math.random() * 2.5,
+                        hue: Math.random() > 0.7 ? '#ff85b8' : (Math.random() > 0.5 ? '#ffd166' : '#ffffff')
+                    });
+                }
+            }
+
+            /**
+             * حساب مواقع نجوم الكوكبة الحالية في منتصف الشاشة
+             */
+            function positionConstellationStars() {
+                const config = CONSTELLATIONS[state.currentStage];
+                const centerX = state.width / 2;
+                const centerY = state.height / 2 + 8;
+                const radius = Math.min(state.width * 0.38, state.height * 0.30, 195);
+
+                state.stars = config.points.map((pt, idx) => ({
+                    index: idx,
+                    x: centerX + pt.x * radius,
+                    y: centerY + pt.y * radius,
+                    connected: idx < state.connectedCount,
+                    pulse: idx * 0.7
+                }));
+            }
+
+            /**
+             * تحميل مرحلة جديدة
+             */
+            function loadStage(stageIndex) {
+                state.currentStage = stageIndex;
+                state.connectedCount = 1; // النجمة الأولى مضاءة كنقطة انطلاق واضحة
+                stageIndicator.textContent = `الكوكبة ${stageIndex + 1} من ${CONSTELLATIONS.length}`;
+                hintBanner.textContent = CONSTELLATIONS[stageIndex].hint;
+                hintBanner.style.opacity = '1';
+                positionConstellationStars();
+
+                // انفجار لطيف حول النجمة الأولى لتوجيه نظر مها إليها
+                const firstStar = state.stars[0];
+                if (firstStar) {
+                    spawnParticles(firstStar.x, firstStar.y, '#ffd166', 18);
+                }
+            }
+
+            /**
+             * توليد جزيئات متوهجة عند لمس نجمة أو إطلاق ألعاب نارية
+             */
+            function spawnParticles(x, y, color, count = 20, speedScale = 1) {
+                for (let i = 0; i < count; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = (40 + Math.random() * 130) * speedScale;
+                    state.particles.push({
+                        x,
+                        y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        life: 1,
+                        decay: 0.75 + Math.random() * 0.85,
+                        size: 1.8 + Math.random() * 3.2,
+                        color
+                    });
+                }
+            }
+
+            /**
+             * التحقق من اقتراب إصبع مها أو الماوس من النجمة التالية
+             */
+            function checkStarConnection(px, py) {
+                if (state.mode !== 'playing') return;
+                const nextIdx = state.connectedCount;
+                const config = CONSTELLATIONS[state.currentStage];
+
+                // تحديد النجمة المستهدفة (إما النجمة التالية، أو العودة للنجمة الأولى لإغلاق الشكل)
+                let targetStar = null;
+                let isClosingStep = false;
+
+                if (nextIdx < state.stars.length) {
+                    targetStar = state.stars[nextIdx];
+                } else if (config.closedLoop && nextIdx === state.stars.length) {
+                    targetStar = state.stars[0];
+                    isClosingStep = true;
+                }
+
+                if (!targetStar) return;
+
+                const dist = Math.hypot(px - targetStar.x, py - targetStar.y);
+                const hitRadius = 38; // نطاق لمس مريح جداً للهواتف
+
+                if (dist <= hitRadius) {
+                    audio.playStarNote(state.connectedCount);
+                    spawnParticles(targetStar.x, targetStar.y, '#ff2a85', 24, 1.1);
+                    spawnParticles(targetStar.x, targetStar.y, '#ffd166', 12, 0.8);
+
+                    if (!isClosingStep) {
+                        targetStar.connected = true;
+                        state.connectedCount++;
+                    } else {
+                        state.connectedCount++;
+                    }
+
+                    // هل اكتملت الكوكبة بالكامل؟
+                    const totalSteps = config.closedLoop ? state.stars.length + 1 : state.stars.length;
+                    if (state.connectedCount >= totalSteps) {
+                        completeCurrentConstellation();
+                    }
+                }
+            }
+
+            /**
+             * عند اكتمال توصيل جميع نجوم الكوكبة
+             */
+            function completeCurrentConstellation() {
+                state.mode = 'reveal';
+                state.pointer.active = false;
+                audio.playConstellationComplete();
+
+                // احتفال ضوئي حول جميع نجوم الكوكبة
+                state.stars.forEach((s) => {
+                    spawnParticles(s.x, s.y, '#ffd166', 14, 1.2);
+                });
+
+                const config = CONSTELLATIONS[state.currentStage];
+                setTimeout(() => {
+                    revealBadge.textContent = `كوكبة #${state.currentStage + 1} مكتملة ✨`;
+                    revealEmoji.textContent = config.emoji;
+                    revealTitle.textContent = config.name;
+                    revealPoem.innerHTML = config.poem;
+                    revealNote.textContent = config.note;
+
+                    if (state.currentStage === CONSTELLATIONS.length - 1) {
+                        nextStageBtn.textContent = "افتحي المفاجأة الكبرى يا مها 👑";
+                    } else {
+                        nextStageBtn.textContent = "انتقلي للسماء التالية 🌠";
+                    }
+
+                    revealOverlay.classList.remove('hidden');
+                }, 650);
+            }
+
+            /**
+             * تحديث ورسم كل إطار (60 FPS)
+             */
+            function updateAndRender(timestamp) {
+                if (!state.lastTime) state.lastTime = timestamp;
+                const dt = Math.min((timestamp - state.lastTime) / 1000, 0.05);
+                state.lastTime = timestamp;
+
+                // 1. مسح الشاشة بتدرج ليلي ناعم يترك أثراً خفيفاً للشهب
+                ctx.clearRect(0, 0, state.width, state.height);
+
+                // رسم هالة سديمية ناعمة في المنتصف
+                const nebulaGrad = ctx.createRadialGradient(
+                    state.width / 2, state.height / 2, 10,
+                    state.width / 2, state.height / 2, Math.max(state.width, state.height) * 0.55
+                );
+                nebulaGrad.addColorStop(0, 'rgba(157, 78, 221, 0.14)');
+                nebulaGrad.addColorStop(0.5, 'rgba(255, 42, 133, 0.05)');
+                nebulaGrad.addColorStop(1, 'rgba(7, 4, 16, 0)');
+                ctx.fillStyle = nebulaGrad;
+                ctx.fillRect(0, 0, state.width, state.height);
+
+                // 2. رسم نجوم الخلفية المتلألئة
+                for (let i = 0; i < state.bgStars.length; i++) {
+                    const s = state.bgStars[i];
+                    s.phase += s.speed * dt;
+                    const alpha = 0.25 + 0.65 * (0.5 + 0.5 * Math.sin(s.phase));
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = s.hue;
+                    ctx.globalAlpha = alpha;
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+
+                // 3. توليد ورسم الشهب العابرة عشوائياً
+                if (Math.random() < 0.015) {
+                    state.shootingStars.push({
+                        x: Math.random() * state.width * 1.2,
+                        y: -20,
+                        vx: -(260 + Math.random() * 220),
+                        vy: 180 + Math.random() * 160,
+                        life: 1
+                    });
+                }
+
+                for (let i = state.shootingStars.length - 1; i >= 0; i--) {
+                    const sh = state.shootingStars[i];
+                    sh.x += sh.vx * dt;
+                    sh.y += sh.vy * dt;
+                    sh.life -= dt * 0.9;
+
+                    if (sh.life <= 0) {
+                        state.shootingStars.splice(i, 1);
+                        continue;
+                    }
+
+                    const tailX = sh.x - sh.vx * 0.14;
+                    const tailY = sh.y - sh.vy * 0.14;
+                    const grad = ctx.createLinearGradient(sh.x, sh.y, tailX, tailY);
+                    grad.addColorStop(0, `rgba(255, 255, 255, ${sh.life})`);
+                    grad.addColorStop(1, 'rgba(255, 42, 133, 0)');
+
+                    ctx.beginPath();
+                    ctx.moveTo(sh.x, sh.y);
+                    ctx.lineTo(tailX, tailY);
+                    ctx.strokeStyle = grad;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // 4. وضع الاحتفال النهائي (ألعاب نارية مستمرة + اسم مها متوهج في السماء)
+                if (state.mode === 'celebration') {
+                    state.fireworkTimer += dt;
+                    if (state.fireworkTimer > 0.75) {
+                        state.fireworkTimer = 0;
+                        const fx = state.width * (0.18 + Math.random() * 0.64);
+                        const fy = state.height * (0.18 + Math.random() * 0.45);
+                        const colors = ['#ff2a85', '#ffd166', '#c77dff', '#ff85b8'];
+                        const c = colors[Math.floor(Math.random() * colors.length)];
+                        spawnParticles(fx, fy, c, 34, 1.45);
+                        audio.playFirework();
+                    }
+
+                    // رسم اسم "مها ❤️ فارس" متلألئاً في قلب السماء
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.font = `bold ${Math.min(state.width * 0.12, 54)}px Georgia, serif`;
+                    ctx.shadowColor = '#ff2a85';
+                    ctx.shadowBlur = 28;
+                    ctx.fillStyle = '#fff0f6';
+                    ctx.fillText('مها ❤️ فارس', state.width / 2, state.height / 2);
+                    ctx.restore();
+                }
+
+                // 5. رسم خطوط الكوكبة ونجومها أثناء اللعب أو الكشف
+                if (state.mode === 'playing' || state.mode === 'reveal') {
+                    drawConstellation(timestamp);
+                }
+
+                // 6. تحديث ورسم الجزيئات المتوهجة
+                for (let i = state.particles.length - 1; i >= 0; i--) {
+                    const p = state.particles[i];
+                    p.x += p.vx * dt;
+                    p.y += p.vy * dt;
+                    p.vy += 45 * dt; // جاذبية خفيفة ناعمة
+                    p.life -= p.decay * dt;
+
+                    if (p.life <= 0) {
+                        state.particles.splice(i, 1);
+                        continue;
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = Math.max(0, p.life);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+
+                requestAnimationFrame(updateAndRender);
+            }
+
+            /**
+             * رسم خطوط التوصيل والنجوم المتوهجة للكوكبة
+             */
+            function drawConstellation(timestamp) {
+                const config = CONSTELLATIONS[state.currentStage];
+                if (!state.stars.length) return;
+
+                // رسم تلميح باهت جداً للشكل الكامل لمساعدة العين
+                ctx.save();
+                ctx.beginPath();
+                state.stars.forEach((s, idx) => {
+                    if (idx === 0) ctx.moveTo(s.x, s.y);
+                    else ctx.lineTo(s.x, s.y);
+                });
+                if (config.closedLoop) ctx.closePath();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                ctx.setLineDash([5, 7]);
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.restore();
+
+                // رسم الخطوط الذهبية والوردية المتصلة بين النجوم المكتشفة
+                if (state.connectedCount > 1) {
+                    ctx.save();
+                    ctx.beginPath();
+                    const limit = Math.min(state.connectedCount, state.stars.length);
+                    for (let i = 0; i < limit; i++) {
+                        const s = state.stars[i];
+                        if (i === 0) ctx.moveTo(s.x, s.y);
+                        else ctx.lineTo(s.x, s.y);
+                    }
+                    if (config.closedLoop && state.connectedCount > state.stars.length) {
+                        ctx.closePath();
+                    }
+                    ctx.strokeStyle = '#ff5ca8';
+                    ctx.lineWidth = 3.2;
+                    ctx.shadowColor = '#ff2a85';
+                    ctx.shadowBlur = 16;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // رسم خط الضوء الممتد من آخر نجمة متصلة إلى إصبع مها / الماوس
+                if (state.mode === 'playing' && state.pointer.active) {
+                    const lastConnectedIdx = Math.min(state.connectedCount - 1, state.stars.length - 1);
+                    const lastStar = state.stars[lastConnectedIdx];
+                    if (lastStar) {
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(lastStar.x, lastStar.y);
+                        ctx.lineTo(state.pointer.x, state.pointer.y);
+                        ctx.strokeStyle = 'rgba(255, 209, 102, 0.75)';
+                        ctx.lineWidth = 2.5;
+                        ctx.shadowColor = '#ffd166';
+                        ctx.shadowBlur = 12;
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+
+                // تحديد النجمة المستهدفة حالياً لتمييزها بنبض مضيء
+                let targetIndex = state.connectedCount < state.stars.length
+                    ? state.connectedCount
+                    : (config.closedLoop && state.connectedCount === state.stars.length ? 0 : -1);
+
+                // رسم النجوم نفسها
+                state.stars.forEach((s, idx) => {
+                    const pulseVal = Math.sin(timestamp * 0.005 + s.pulse);
+                    const isTarget = (idx === targetIndex && state.mode === 'playing');
+                    const isDone = s.connected;
+
+                    ctx.save();
+                    // هالة خارجية للنجمة المستهدفة
+                    if (isTarget) {
+                        const ringRadius = 18 + pulseVal * 5;
+                        ctx.beginPath();
+                        ctx.arc(s.x, s.y, ringRadius, 0, Math.PI * 2);
+                        ctx.strokeStyle = 'rgba(255, 209, 102, 0.65)';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+
+                    // قلب النجمة المتوهج
+                    const starRadius = isTarget ? 8.5 : (isDone ? 7 : 5.5);
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, starRadius, 0, Math.PI * 2);
+                    ctx.fillStyle = isTarget ? '#ffd166' : (isDone ? '#ff85b8' : '#c084fc');
+                    ctx.shadowColor = isTarget ? '#ffd166' : '#ff2a85';
+                    ctx.shadowBlur = isTarget ? 22 : 14;
+                    ctx.fill();
+
+                    // نقطة بيضاء لامعة في المركز
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, starRadius * 0.42, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+                    ctx.restore();
+                });
+            }
+
+            /**
+             * ============================================================================
+             * 4. أحداث اللمس والماوس والأزرار
+             * ============================================================================
+             */
+            function handlePointerMove(x, y) {
+                state.pointer.x = x;
+                state.pointer.y = y;
+                if (state.mode === 'playing' && state.pointer.active) {
+                    // أثر جزيئات ناعم خلف الإصبع
+                    if (Math.random() < 0.45) {
+                        spawnParticles(x, y, '#ff85b8', 1, 0.25);
+                    }
+                    checkStarConnection(x, y);
+                }
+            }
+
+            canvas.addEventListener('pointerdown', (e) => {
+                audio.init();
+                state.pointer.active = true;
+                handlePointerMove(e.clientX, e.clientY);
+
+                if (state.mode === 'celebration') {
+                    const colors = ['#ff2a85', '#ffd166', '#c77dff', '#ffffff'];
+                    const c = colors[Math.floor(Math.random() * colors.length)];
+                    spawnParticles(e.clientX, e.clientY, c, 36, 1.5);
+                    audio.playFirework();
+                }
+            });
+
+            canvas.addEventListener('pointermove', (e) => {
+                handlePointerMove(e.clientX, e.clientY);
+            });
+
+            window.addEventListener('pointerup', () => {
+                state.pointer.active = false;
+            });
+
+            // زر البداية
+            startBtn.addEventListener('click', () => {
+                audio.init();
+                audio.playStarNote(2);
+                welcomeOverlay.classList.add('hidden');
+                state.mode = 'playing';
+                loadStage(0);
+            });
+
+            // زر الانتقال للمرحلة التالية
+            nextStageBtn.addEventListener('click', () => {
+                revealOverlay.classList.add('hidden');
+                if (state.currentStage + 1 < CONSTELLATIONS.length) {
+                    state.mode = 'playing';
+                    loadStage(state.currentStage + 1);
+                } else {
+                    // الوصول للمفاجأة النهائية الكبرى
+                    state.mode = 'celebration';
+                    stageIndicator.textContent = 'سماءُ مها وفارس ✨';
+                    hintBanner.textContent = 'المسي السماء لإطلاق الألعاب النارية! 🎆';
+                    audio.playConstellationComplete();
+                    finalOverlay.classList.remove('hidden');
+                }
+            });
+
+            // زر مشاهدة سماء الاحتفال والألعاب النارية بحرية
+            celebrateBtn.addEventListener('click', () => {
+                finalOverlay.classList.add('hidden');
+                const fx = state.width / 2;
+                const fy = state.height * 0.35;
+                spawnParticles(fx, fy, '#ffd166', 45, 1.6);
+                audio.playFirework();
+            });
+
+            // زر إعادة اللعب من البداية
+            replayBtn.addEventListener('click', () => {
+                finalOverlay.classList.add('hidden');
+                state.mode = 'playing';
+                loadStage(0);
+            });
+
+            // زر كتم وتشغيل الصوت
+            soundToggleBtn.addEventListener('click', () => {
+                audio.muted = !audio.muted;
+                soundToggleBtn.textContent = audio.muted ? '🔇' : '🔊';
+            });
+
+            // تهيئة الشاشة وتشغيل حلقة الرسم
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+            requestAnimationFrame(updateAndRender);
+        })();
+    </script>
+</body>
+</html>
