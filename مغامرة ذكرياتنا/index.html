@@ -1,1 +1,2128 @@
-مغامرة ذكرياتنا/index.html
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مغامرة ذكرياتنا | فارس ومها ❤️</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,700;1,700&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* تنسيقات مخصصة للعبة لضمان التجاوب الكامل ومنع التمرير أو التحديد أثناء اللعب */
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #090514;
+            font-family: 'Cairo', sans-serif;
+            touch-action: none;
+        }
+
+        #mem-game-wrapper {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            background: #090514;
+        }
+
+        #mem-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glass-hud {
+            background: rgba(18, 9, 38, 0.78);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(236, 72, 153, 0.35);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .touch-btn {
+            background: rgba(36, 18, 71, 0.65);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 2px solid rgba(236, 72, 153, 0.45);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transition: transform 0.08s ease, background-color 0.08s ease, border-color 0.08s ease;
+        }
+
+        .touch-btn:active, .touch-btn.pressed {
+            transform: scale(0.92);
+            background: rgba(236, 72, 153, 0.55);
+            border-color: #f472b6;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(236, 72, 153, 0.35); }
+            50% { box-shadow: 0 0 38px rgba(236, 72, 153, 0.75); }
+        }
+
+        .glow-card {
+            animation: pulseGlow 3s infinite ease-in-out;
+        }
+
+        /* شريط تمرير أنيق لنافذة المراحل على الشاشات الصغيرة */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(236, 72, 153, 0.5);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="mem-game-wrapper">
+        <!-- لوحة الرسم الرئيسية للعبة -->
+        <canvas id="mem-canvas"></canvas>
+
+        <!-- شريط المعلومات العلوي (HUD) -->
+        <header id="mem-hud" class="fixed top-3 left-3 right-3 sm:top-4 sm:left-6 sm:right-6 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+            <!-- العدادات (المرحلة، القلوب، النجوم، المفتاح) -->
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2.5 pointer-events-auto">
+                <!-- شارة المرحلة الحالية -->
+                <div class="glass-hud px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl flex items-center gap-2 text-xs sm:text-sm font-bold text-pink-200">
+                    <span id="hud-stage-icon">🌸</span>
+                    <span id="hud-stage-name">المرحلة 1: حديقة البدايات</span>
+                </div>
+
+                <!-- قلوب الحياة (3 قلوب) -->
+                <div id="hud-lives" class="glass-hud px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl flex items-center gap-1 text-sm sm:text-base" title="قلوب الحياة">
+                    <span>❤️</span><span>❤️</span><span>❤️</span>
+                </div>
+
+                <!-- عداد النجوم السرية في المرحلة (من 3) -->
+                <div class="glass-hud px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl flex items-center gap-1.5 text-xs sm:text-sm font-bold text-amber-300">
+                    <span>⭐</span>
+                    <span id="hud-stars">0/3</span>
+                </div>
+
+                <!-- مؤشر المفتاح الذهبي (يظهر في المراحل التي تحتوي على بوابة مغلقة) -->
+                <div id="hud-key-badge" class="hidden glass-hud px-3 py-1.5 rounded-2xl flex items-center gap-1.5 text-xs sm:text-sm font-bold text-amber-200 border-amber-400/50">
+                    <span>🗝️</span>
+                    <span id="hud-key-status">ابحث عن المفتاح</span>
+                </div>
+            </div>
+
+            <!-- أزرار التحكم السريعة (اختيار المراحل، إعادة، صوت) مع ترك مسافة لزر العودة العائم -->
+            <div class="flex items-center gap-1.5 sm:gap-2 pointer-events-auto ml-0 sm:ml-40">
+                <button id="btn-open-levels" class="glass-hud px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-2xl flex items-center gap-1.5 text-xs sm:text-sm font-bold text-purple-200 hover:text-white hover:border-pink-400 transition" title="خريطة المراحل">
+                    <span>🗺️</span>
+                    <span class="hidden md:inline">المراحل</span>
+                </button>
+                <button id="btn-restart-quick" class="glass-hud w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-purple-300 hover:text-white hover:border-pink-400 transition" title="إعادة المرحلة الحالية">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </button>
+                <button id="btn-sound-toggle" class="glass-hud w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-pink-300 hover:text-white hover:border-pink-400 transition" title="كتم / تشغيل الصوت">
+                    <span id="sound-icon" class="text-base sm:text-lg">🔊</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- شاشة البداية الترحيبية -->
+        <div id="start-overlay" class="fixed inset-0 z-30 bg-[#090514]/88 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="glass-hud glow-card rounded-3xl max-w-xl w-full p-6 sm:p-9 text-center border-pink-500/50 max-h-[92vh] overflow-y-auto custom-scroll">
+                <div class="w-20 h-20 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-pink-500 via-rose-500 to-purple-700 p-[2px] shadow-lg shadow-pink-500/30">
+                    <div class="w-full h-full bg-[#140b29] rounded-3xl flex items-center justify-center text-4xl">
+                        👑💖
+                    </div>
+                </div>
+                <h1 class="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-pink-300 via-rose-200 to-purple-300 bg-clip-text text-transparent mb-2.5" style="font-family: 'Amiri', serif;">
+                    مغامرة ذكرياتنا
+                </h1>
+                <p class="text-sm sm:text-base text-purple-200/90 leading-relaxed mb-5">
+                    أهلاً بكِ يا أميرتي <span class="text-pink-400 font-bold">مها</span> في رحلة مكونة من <span class="text-amber-300 font-bold">4 عوالم ساحرة</span> مليئة بالتحدي والمفاجآت! تخطّي العقبات، اسحقي غيوم الحسد، واجمعي النجوم الذهبية لتصلي إلى قلعة <span class="text-pink-400 font-bold">فارس</span> ✨
+                </p>
+
+                <!-- شرح أزرار التحكم -->
+                <div class="grid grid-cols-3 gap-2 text-[11px] sm:text-xs text-purple-200/85 mb-6 bg-black/35 p-3 rounded-2xl border border-white/10">
+                    <div class="flex flex-col items-center gap-1">
+                        <span class="px-2.5 py-1 rounded-lg bg-white/10 font-bold text-pink-300">◀ ▶</span>
+                        <span>تحرك</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1">
+                        <span class="px-2.5 py-1 rounded-lg bg-white/10 font-bold text-pink-300">قفز ×2</span>
+                        <span>قفز مزدوج</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1">
+                        <span class="px-2.5 py-1 rounded-lg bg-white/10 font-bold text-amber-300">اندفاع ⚡</span>
+                        <span>عبور سريع</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button id="btn-start-game" class="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-extrabold text-base sm:text-lg shadow-xl shadow-pink-500/30 transition transform hover:scale-[1.02] active:scale-[0.98]">
+                        ابدأ المغامرة ❤️
+                    </button>
+                    <button id="btn-start-levels" class="px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 text-purple-200 font-bold text-sm sm:text-base transition">
+                        اختيار المرحلة 🗺️
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- نافذة اختيار المراحل (Level Select) -->
+        <div id="level-select-modal" class="hidden fixed inset-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="glass-hud glow-card rounded-3xl max-w-2xl w-full p-6 sm:p-8 border-pink-500/45 max-h-[90vh] overflow-y-auto custom-scroll">
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-pink-300" style="font-family: 'Amiri', serif;">خريطة عوالم الذكريات</h2>
+                        <p class="text-xs text-purple-300">اختاري أي مرحلة للعب مباشرة أو أعيديها لجمع كل النجوم ⭐</p>
+                    </div>
+                    <button id="btn-close-levels" class="w-9 h-9 rounded-full bg-white/10 hover:bg-pink-600 text-white text-xl flex items-center justify-center transition">&times;</button>
+                </div>
+
+                <div id="levels-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- يتم توليد بطاقات المراحل الأربعة برمجياً هنا -->
+                </div>
+            </div>
+        </div>
+
+        <!-- نافذة رسالة الذكرى (Memory Chest Modal) -->
+        <div id="memory-modal" class="hidden fixed inset-0 z-40 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="glass-hud glow-card rounded-3xl max-w-md w-full p-6 sm:p-8 text-center border-pink-400/60">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-pink-500/20 border border-pink-500/40 text-pink-300 text-xs font-bold mb-4">
+                    <span>✨</span>
+                    <span id="memory-badge">صندوق الذكرى السري</span>
+                </div>
+                <div id="memory-emoji" class="text-5xl mb-3">💌</div>
+                <h2 id="memory-title" class="text-2xl sm:text-3xl font-bold text-pink-200 mb-2" style="font-family: 'Amiri', serif;">
+                    عنوان الذكرى
+                </h2>
+                <p id="memory-date" class="text-xs font-semibold text-amber-300 mb-3"></p>
+                <p id="memory-text" class="text-sm sm:text-base text-slate-100/95 leading-relaxed bg-black/30 p-4 rounded-2xl border border-white/10 mb-6">
+                    نص رسالة الحب هنا...
+                </p>
+                <button id="btn-continue-memory" class="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-sm sm:text-base shadow-lg shadow-pink-500/25 transition">
+                    إغلاق الرسالة ومتابعة المغامرة 💖
+                </button>
+            </div>
+        </div>
+
+        <!-- نافذة إتمام المرحلة (Stage Complete) -->
+        <div id="stage-complete-modal" class="hidden fixed inset-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="glass-hud glow-card rounded-3xl max-w-md w-full p-6 sm:p-8 text-center border-amber-400/50">
+                <div class="text-5xl mb-3">🌟🎉💖</div>
+                <h2 id="stage-complete-title" class="text-2xl sm:text-3xl font-bold text-amber-200 mb-2" style="font-family: 'Amiri', serif;">
+                    أحسنتِ يا مها!
+                </h2>
+                <p id="stage-complete-subtitle" class="text-xs sm:text-sm text-purple-200 mb-5">
+                    اجتزتِ تحديات هذه المرحلة بنجاح وبراعة!
+                </p>
+
+                <div class="flex justify-center gap-3 text-3xl mb-6" id="stage-complete-stars">
+                    <span>⭐</span><span>⭐</span><span>⭐</span>
+                </div>
+
+                <div class="flex flex-col gap-2.5">
+                    <button id="btn-next-stage" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-extrabold text-base shadow-lg shadow-pink-500/30 transition">
+                        الانتقال للمرحلة التالية ⬅️
+                    </button>
+                    <button id="btn-replay-stage" class="w-full py-2.5 rounded-2xl bg-white/10 hover:bg-white/15 text-purple-200 text-sm font-semibold transition">
+                        إعادة المرحلة لجمع كل النجوم
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- نافذة انتهاء القلوب (Game Over - إعادة فورية من نفس المرحلة) -->
+        <div id="gameover-modal" class="hidden fixed inset-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="glass-hud rounded-3xl max-w-md w-full p-6 sm:p-8 text-center border-rose-500/50">
+                <div class="text-5xl mb-3">💔🥺</div>
+                <h2 class="text-2xl sm:text-3xl font-bold text-rose-300 mb-2" style="font-family: 'Amiri', serif;">
+                    لا بأس يا أميرتي!
+                </h2>
+                <p class="text-sm text-purple-200/90 leading-relaxed mb-6">
+                    كل مغامرة جميلة فيها تحديات.. خذي نفساً عميقاً وحاولي مجدداً، فارس بانتظاركِ!
+                </p>
+                <button id="btn-retry-stage" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-base shadow-lg shadow-pink-500/30 transition">
+                    إعادة المرحلة الآن 🔄
+                </button>
+            </div>
+        </div>
+
+        <!-- شاشة الفوز الكبرى عند الوصول إلى فارس في قلعة اللقاء الأبدي -->
+        <div id="victory-modal" class="hidden fixed inset-0 z-40 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="glass-hud glow-card rounded-3xl max-w-lg w-full p-6 sm:p-9 text-center border-pink-400/70 max-h-[92vh] overflow-y-auto custom-scroll">
+                <div class="text-5xl sm:text-6xl mb-3">🏰❤️👑</div>
+                <h2 class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-pink-300 via-amber-200 to-purple-300 bg-clip-text text-transparent mb-3" style="font-family: 'Amiri', serif;">
+                    وصلتِ إلى قلبي يا مها!
+                </h2>
+                <p id="final-love-letter" class="text-sm sm:text-base text-slate-100/95 leading-relaxed bg-black/35 p-4 sm:p-5 rounded-2xl border border-pink-500/30 mb-6">
+                    "تخطّيتِ كل العوالم والتحديات لتصلي إليّ.. وهكذا هي قصتنا دائماً، مهما واجهنا من صعاب ننتصر بالحب. أحبكِ يا مها إلى الأبد.. من قلبكِ <span class="text-pink-400 font-bold">فارس</span>."
+                </p>
+
+                <!-- ملخص الإنجاز الكلي في المراحل الأربعة -->
+                <div class="grid grid-cols-3 gap-2.5 mb-6">
+                    <div class="p-3 rounded-2xl bg-white/5 border border-white/10">
+                        <div class="text-lg mb-0.5">🌍</div>
+                        <div class="text-base sm:text-lg font-extrabold text-pink-300">4 / 4</div>
+                        <div class="text-[11px] text-purple-300">العوالم</div>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-white/5 border border-white/10">
+                        <div class="text-lg mb-0.5">⭐</div>
+                        <div id="final-total-stars" class="text-base sm:text-lg font-extrabold text-amber-300">0 / 12</div>
+                        <div class="text-[11px] text-purple-300">النجوم الذهبية</div>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-white/5 border border-white/10">
+                        <div class="text-lg mb-0.5">💌</div>
+                        <div id="final-total-memories" class="text-base sm:text-lg font-extrabold text-purple-300">4 / 4</div>
+                        <div class="text-[11px] text-purple-300">الذكريات</div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button id="btn-play-again" class="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-base shadow-xl shadow-pink-500/30 transition">
+                        العب من البداية 🔄
+                    </button>
+                    <button id="btn-victory-levels" class="px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-purple-200 font-bold text-sm transition">
+                        خريطة المراحل 🗺️
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- أزرار التحكم باللمس للهواتف والأجهزة اللوحية (Touch Controls) -->
+        <div id="touch-controls" class="fixed bottom-3 left-3 right-3 sm:bottom-6 sm:left-8 sm:right-8 z-20 flex items-end justify-between pointer-events-none">
+            <!-- أزرار الحركة يمين / يسار -->
+            <div class="flex items-center gap-3 sm:gap-4 pointer-events-auto" dir="ltr">
+                <button id="touch-left" class="touch-btn w-15 h-15 sm:w-18 sm:h-18 rounded-full flex items-center justify-center text-white text-2xl font-bold" style="width: 62px; height: 62px;" aria-label="يسار">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                <button id="touch-right" class="touch-btn w-15 h-15 sm:w-18 sm:h-18 rounded-full flex items-center justify-center text-white text-2xl font-bold" style="width: 62px; height: 62px;" aria-label="يمين">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+
+            <!-- أزرار الاندفاع السريع (Dash) والقفز -->
+            <div class="flex items-center gap-3 sm:gap-4 pointer-events-auto">
+                <button id="touch-dash" class="touch-btn rounded-full flex flex-col items-center justify-center text-amber-200 font-bold bg-amber-500/20 border-amber-400/60" style="width: 62px; height: 62px;" aria-label="اندفاع">
+                    <span class="text-lg leading-none">⚡</span>
+                    <span class="text-[10px] mt-0.5">اندفاع</span>
+                </button>
+                <button id="touch-jump" class="touch-btn rounded-full flex flex-col items-center justify-center text-pink-200 font-bold bg-pink-600/30 border-pink-400/65" style="width: 74px; height: 74px;" aria-label="قفز">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>
+                    <span class="text-[11px]">قفز</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            /**
+             * ============================================================================
+             * 1. مصفوفة الذكريات والرسائل الرومانسية (عدّل النصوص والتواريخ هنا بحرية يا فارس)
+             * ============================================================================
+             */
+            const MEMORIES_DATA = [
+                {
+                    stage: 1,
+                    emoji: "🌸",
+                    title: "حديقة البدايات.. أول نظرة",
+                    date: "الذكرى الأولى • بداية الحكاية",
+                    text: "منذ اللحظة الأولى التي التقيت بكِ فيها يا مها، أزهرت كل حدائق قلبي. كنتِ ولا زلتِ أجمل صدفة غيرت حياتي للأبد."
+                },
+                {
+                    stage: 2,
+                    emoji: "🌠",
+                    title: "تحت سماء النجوم.. ضحكتكِ",
+                    date: "الذكرى الثانية • سحر الليالي",
+                    text: "بين كل هذه النجوم في السماء، تبقين أنتِ النجمة الأشد لمعاناً في عيني. ضحكتكِ وحدها قادرة على محو كل تعب الدنيا."
+                },
+                {
+                    stage: 3,
+                    emoji: "💎",
+                    title: "أقوى من كل الظلال",
+                    date: "الذكرى الثالثة • وعد البقاء",
+                    text: "مهما واجهنا من تحديات أو ظروف، حبنا يشبه الكريستال النقي لا ينكسر أبداً. سأبقى دائماً درعكِ وسندكِ في كل خطوة."
+                },
+                {
+                    stage: 4,
+                    emoji: "👑",
+                    title: "ملكة قلبي وعرش حياتي",
+                    date: "الذكرى الرابعة • اللقاء الأبدي",
+                    text: "اقتربتِ من بوابة القلعة يا أميرتي مها! كل خطوة خطوتِها هنا تذكرني كم أنا محظوظ لأنكِ شريكة عمري وحبيبتي."
+                }
+            ];
+
+            /**
+             * ============================================================================
+             * 2. نظام المؤثرات الصوتية المولدة برمجياً عبر Web Audio API
+             * ============================================================================
+             */
+            class SoundFX {
+                constructor() {
+                    this.ctx = null;
+                    this.muted = false;
+                }
+
+                init() {
+                    if (!this.ctx) {
+                        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                        if (AudioCtx) this.ctx = new AudioCtx();
+                    }
+                    if (this.ctx && this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                }
+
+                playTone(freq, type, duration, vol = 0.12, slideTo = null) {
+                    if (this.muted) return;
+                    this.init();
+                    if (!this.ctx) return;
+
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, now);
+                    if (slideTo) {
+                        osc.frequency.exponentialRampToValueAtTime(slideTo, now + duration);
+                    }
+
+                    gain.gain.setValueAtTime(vol, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + duration);
+                }
+
+                jump() { this.playTone(320, 'sine', 0.2, 0.13, 660); }
+                doubleJump() { this.playTone(500, 'triangle', 0.22, 0.13, 940); }
+                dash() { this.playTone(720, 'sawtooth', 0.16, 0.08, 220); }
+                stompEnemy() {
+                    this.playTone(260, 'square', 0.1, 0.11, 520);
+                    setTimeout(() => this.playTone(580, 'sine', 0.14, 0.11), 60);
+                }
+                collectHeart() {
+                    this.playTone(587.33, 'sine', 0.11, 0.12);
+                    setTimeout(() => this.playTone(880, 'sine', 0.18, 0.12), 65);
+                }
+                collectStar() {
+                    this.playTone(659.25, 'triangle', 0.1, 0.12);
+                    setTimeout(() => this.playTone(880, 'triangle', 0.1, 0.12), 60);
+                    setTimeout(() => this.playTone(1174.66, 'triangle', 0.25, 0.14), 120);
+                }
+                collectKey() {
+                    this.playTone(880, 'sine', 0.12, 0.14);
+                    setTimeout(() => this.playTone(1108.73, 'sine', 0.12, 0.14), 80);
+                    setTimeout(() => this.playTone(1318.51, 'sine', 0.25, 0.15), 160);
+                }
+                openDoor() {
+                    this.playTone(440, 'triangle', 0.35, 0.13, 880);
+                }
+                openMemory() {
+                    [523.25, 659.25, 783.99, 1046.50].forEach((n, i) => {
+                        setTimeout(() => this.playTone(n, 'sine', 0.32, 0.13), i * 85);
+                    });
+                }
+                hurt() {
+                    this.playTone(300, 'sawtooth', 0.28, 0.13, 110);
+                }
+                stageClear() {
+                    [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((n, i) => {
+                        setTimeout(() => this.playTone(n, 'triangle', 0.3, 0.14), i * 100);
+                    });
+                }
+                victory() {
+                    [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50, 1318.51, 1567.98].forEach((n, i) => {
+                        setTimeout(() => this.playTone(n, 'triangle', 0.36, 0.16), i * 115);
+                    });
+                }
+            }
+
+            const sfx = new SoundFX();
+
+            /**
+             * ============================================================================
+             * 3. تعريف المراحل الأربعة وتصميمها المتنوع
+             * ============================================================================
+             */
+            const STAGES_META = [
+                {
+                    id: 1,
+                    icon: "🌸",
+                    name: "حديقة البدايات",
+                    subtitle: "بداية القصة • أجواء هادئة ومنصات متوهجة",
+                    skyTop: "#130829",
+                    skyBottom: "#28114d",
+                    accentColor: "#ec4899",
+                    platformFill: "#261147",
+                    windX: 0,
+                    hasKey: false
+                },
+                {
+                    id: 2,
+                    icon: "🌠",
+                    name: "جسر النجوم العائم",
+                    subtitle: "تحدي التوقيت • منصات متحركة وأخرى تتلاشى",
+                    skyTop: "#090d29",
+                    skyBottom: "#1e1b4b",
+                    accentColor: "#38bdf8",
+                    platformFill: "#1e293b",
+                    windX: -0.35, // نسيم سماوي خفيف يضيف تحدياً لطيفاً
+                    hasKey: false
+                },
+                {
+                    id: 3,
+                    icon: "💎",
+                    name: "كهف الكريستال والظلال",
+                    subtitle: "تحدي العقبات • أشواك، غيوم حسد، وبوابة سحرية",
+                    skyTop: "#140524",
+                    skyBottom: "#2e093d",
+                    accentColor: "#c084fc",
+                    platformFill: "#320d45",
+                    windX: 0,
+                    hasKey: true
+                },
+                {
+                    id: 4,
+                    icon: "🏰",
+                    name: "قلعة اللقاء الأبدي",
+                    subtitle: "التحدي النهائي • الطريق الملكي إلى فارس",
+                    skyTop: "#1a0626",
+                    skyBottom: "#3b0d3c",
+                    accentColor: "#fbbf24",
+                    platformFill: "#380d3a",
+                    windX: 0,
+                    hasKey: true
+                }
+            ];
+
+            /**
+             * ============================================================================
+             * 4. إعدادات اللوحة والمتغيرات الفيزيائية
+             * ============================================================================
+             */
+            const canvas = document.getElementById('mem-canvas');
+            const ctx = canvas.getContext('2d');
+
+            const LOGICAL_HEIGHT = 640;
+            const GROUND_Y = 530;
+            const GRAVITY = 0.58;
+            const MOVE_SPEED = 5.1;
+            const JUMP_FORCE = -12.3;
+            const DOUBLE_JUMP_FORCE = -10.8;
+            const DASH_SPEED = 13.5;
+            const DASH_DURATION = 11; // إطارات
+            const DASH_COOLDOWN = 42; // إطارات
+
+            let scaleFactor = 1;
+            let viewWidth = 1000;
+            let animationFrameId = null;
+
+            const keys = {
+                left: false,
+                right: false,
+                jumpPressed: false
+            };
+
+            // تقدم اللاعب في الذاكرة (بدون الاعتماد على localStorage لتفادي أي قيود بيئية)
+            const progress = {
+                unlockedStage: 1,
+                stageStars: { 1: 0, 2: 0, 3: 0, 4: 0 },
+                memoriesRead: { 1: false, 2: false, 3: false, 4: false }
+            };
+
+            const gameState = {
+                mode: 'start', // 'start' | 'playing' | 'memory' | 'stageClear' | 'gameover' | 'victory'
+                currentStageId: 1,
+                levelWidth: 3600,
+                cameraX: 0,
+                lives: 3,
+                starsCollectedInRun: 0,
+                hasKey: false,
+                doorOpened: false,
+                checkpoint: { x: 100, y: GROUND_Y - 60 },
+                time: 0,
+                screenShake: 0
+            };
+
+            const player = {
+                x: 100,
+                y: GROUND_Y - 56,
+                w: 34,
+                h: 50,
+                vx: 0,
+                vy: 0,
+                facing: 1,
+                onGround: false,
+                standingPlatform: null,
+                jumpsRemaining: 2,
+                coyoteTimer: 0,
+                dashTimer: 0,
+                dashCooldown: 0,
+                invulnTimer: 0,
+                animFrame: 0
+            };
+
+            // كيانات المرحلة النشطة
+            let platforms = [];
+            let spikes = [];
+            let enemies = [];
+            let stars = [];
+            let extraHearts = [];
+            let checkpoints = [];
+            let memoryChest = null;
+            let magicKey = null;
+            let magicDoor = null;
+            let stageGoal = null;
+            let particles = [];
+            let bgDecor = [];
+
+            /**
+             * ============================================================================
+             * 5. بناء خرائط المراحل الأربعة بتفاصيل وتحديات مختلفة كلياً
+             * ============================================================================
+             */
+            function loadStage(stageId, autoStart = true) {
+                gameState.currentStageId = stageId;
+                const meta = STAGES_META[stageId - 1];
+
+                gameState.cameraX = 0;
+                gameState.lives = 3;
+                gameState.starsCollectedInRun = 0;
+                gameState.hasKey = false;
+                gameState.doorOpened = false;
+                gameState.checkpoint = { x: 100, y: GROUND_Y - 60 };
+                gameState.screenShake = 0;
+
+                player.x = 100;
+                player.y = GROUND_Y - 60;
+                player.vx = 0;
+                player.vy = 0;
+                player.facing = 1;
+                player.onGround = false;
+                player.standingPlatform = null;
+                player.jumpsRemaining = 2;
+                player.dashTimer = 0;
+                player.dashCooldown = 0;
+                player.invulnTimer = 0;
+
+                platforms = [];
+                spikes = [];
+                enemies = [];
+                stars = [];
+                extraHearts = [];
+                checkpoints = [];
+                memoryChest = null;
+                magicKey = null;
+                magicDoor = null;
+                particles = [];
+
+                if (stageId === 1) {
+                    // ------------------------------------------------------------------
+                    // المرحلة 1: حديقة البدايات (بداية القصة - منصات متدرجة وتحديات لطيفة)
+                    // ------------------------------------------------------------------
+                    gameState.levelWidth = 3500;
+                    platforms = [
+                        { x: 0, y: GROUND_Y, w: 780, h: 150, type: 'ground' },
+                        { x: 900, y: GROUND_Y, w: 740, h: 150, type: 'ground' },
+                        { x: 1780, y: GROUND_Y, w: 760, h: 150, type: 'ground' },
+                        { x: 2680, y: GROUND_Y, w: 820, h: 150, type: 'ground' },
+
+                        { x: 260, y: 415, w: 150, h: 24, type: 'solid' },
+                        { x: 480, y: 330, w: 160, h: 24, type: 'solid' },
+                        { x: 740, y: 245, w: 130, h: 24, type: 'solid' }, // نجمة 1 عالية
+
+                        { x: 1050, y: 410, w: 150, h: 24, type: 'solid' },
+                        { x: 1290, y: 325, w: 160, h: 24, type: 'solid' },
+                        { x: 1560, y: 410, w: 140, h: 24, type: 'solid' },
+
+                        { x: 1940, y: 400, w: 160, h: 24, type: 'solid' },
+                        { x: 2180, y: 300, w: 170, h: 24, type: 'solid' },
+                        { x: 2460, y: 390, w: 150, h: 24, type: 'solid' },
+                        { x: 2860, y: 380, w: 170, h: 24, type: 'solid' }
+                    ];
+
+                    // عدو واحد بسيط للتدريب على القفز فوقه
+                    enemies = [
+                        { x: 1250, y: GROUND_Y - 34, minX: 980, maxX: 1560, vx: 1.6, alive: true, squashTimer: 0 }
+                    ];
+
+                    checkpoints = [
+                        { x: 1660, y: GROUND_Y, activated: false }
+                    ];
+
+                    // 3 نجوم ذهبية سرية
+                    stars = [
+                        { x: 805, y: 195, collected: false, phase: 0 },
+                        { x: 1370, y: 270, collected: false, phase: 1.5 },
+                        { x: 2945, y: 325, collected: false, phase: 3.0 }
+                    ];
+
+                    extraHearts = [
+                        { x: 560, y: 285, collected: false, phase: 0.5 }
+                    ];
+
+                    memoryChest = {
+                        ...MEMORIES_DATA[0],
+                        x: 2240, y: 252, w: 46, h: 46, opened: false, bounce: 0
+                    };
+
+                    stageGoal = { x: 3260, y: GROUND_Y - 120, w: 70, h: 120, isCastle: false };
+
+                } else if (stageId === 2) {
+                    // ------------------------------------------------------------------
+                    // المرحلة 2: جسر النجوم العائم (منصات متحركة + منصات تختفي بعد 1.5 ثانية)
+                    // ------------------------------------------------------------------
+                    gameState.levelWidth = 3900;
+                    platforms = [
+                        { x: 0, y: GROUND_Y, w: 520, h: 150, type: 'ground' },
+                        // منصات متحركة أفقياً وعمودياً
+                        { x: 600, y: 450, w: 140, h: 22, type: 'moving', startX: 600, startY: 450, rangeX: 160, rangeY: 0, speed: 0.025, phase: 0, dx: 0, dy: 0 },
+                        { x: 960, y: 380, w: 140, h: 22, type: 'moving', startX: 960, startY: 380, rangeX: 0, rangeY: 110, speed: 0.03, phase: 1, dx: 0, dy: 0 },
+
+                        // منصات تتلاشى بعد الوقوف عليها بـ 1.5 ثانية (90 إطار)
+                        { x: 1220, y: 330, w: 130, h: 22, type: 'crumbling', timer: 0, maxTimer: 90, broken: false, respawnTimer: 0 },
+                        { x: 1430, y: 280, w: 130, h: 22, type: 'crumbling', timer: 0, maxTimer: 90, broken: false, respawnTimer: 0 },
+                        { x: 1640, y: 340, w: 130, h: 22, type: 'crumbling', timer: 0, maxTimer: 90, broken: false, respawnTimer: 0 },
+
+                        // جزيرة استراحة ونقطة حفظ
+                        { x: 1870, y: GROUND_Y, w: 480, h: 150, type: 'ground' },
+                        { x: 2020, y: 380, w: 160, h: 24, type: 'solid' },
+
+                        // سلسلة منصات سماوية متقدمة
+                        { x: 2450, y: 440, w: 145, h: 22, type: 'moving', startX: 2450, startY: 440, rangeX: 180, rangeY: 0, speed: 0.032, phase: 0.5, dx: 0, dy: 0 },
+                        { x: 2830, y: 360, w: 130, h: 22, type: 'crumbling', timer: 0, maxTimer: 90, broken: false, respawnTimer: 0 },
+                        { x: 3050, y: 290, w: 130, h: 22, type: 'crumbling', timer: 0, maxTimer: 90, broken: false, respawnTimer: 0 },
+                        { x: 3260, y: 380, w: 140, h: 22, type: 'moving', startX: 3260, startY: 380, rangeX: 0, rangeY: 95, speed: 0.035, phase: 2, dx: 0, dy: 0 },
+
+                        { x: 3480, y: GROUND_Y, w: 420, h: 150, type: 'ground' }
+                    ];
+
+                    enemies = [
+                        { x: 2100, y: GROUND_Y - 34, minX: 1920, maxX: 2300, vx: 2.1, alive: true, squashTimer: 0 }
+                    ];
+
+                    checkpoints = [
+                        { x: 1940, y: GROUND_Y, activated: false }
+                    ];
+
+                    stars = [
+                        { x: 1030, y: 220, collected: false, phase: 0.4 },
+                        { x: 2100, y: 325, collected: false, phase: 1.7 },
+                        { x: 3115, y: 235, collected: false, phase: 2.9 }
+                    ];
+
+                    extraHearts = [
+                        { x: 2250, y: 480, collected: false, phase: 1.1 }
+                    ];
+
+                    memoryChest = {
+                        ...MEMORIES_DATA[1],
+                        x: 2075, y: 332, w: 46, h: 46, opened: false, bounce: 0
+                    };
+
+                    stageGoal = { x: 3710, y: GROUND_Y - 120, w: 70, h: 120, isCastle: false };
+
+                } else if (stageId === 3) {
+                    // ------------------------------------------------------------------
+                    // المرحلة 3: كهف الكريستال والظلال (أشواك + أعداء + مفتاح وبوابة سحرية)
+                    // ------------------------------------------------------------------
+                    gameState.levelWidth = 4200;
+                    platforms = [
+                        { x: 0, y: GROUND_Y, w: 920, h: 150, type: 'ground' },
+                        { x: 1040, y: GROUND_Y, w: 980, h: 150, type: 'ground' },
+                        { x: 2150, y: GROUND_Y, w: 950, h: 150, type: 'ground' },
+                        { x: 3230, y: GROUND_Y, w: 970, h: 150, type: 'ground' },
+
+                        // منصات داخل الكهف
+                        { x: 280, y: 410, w: 150, h: 24, type: 'solid' },
+                        { x: 520, y: 320, w: 160, h: 24, type: 'solid' },
+                        { x: 770, y: 240, w: 140, h: 24, type: 'solid' },
+
+                        { x: 1180, y: 400, w: 160, h: 24, type: 'solid' },
+                        { x: 1450, y: 310, w: 170, h: 24, type: 'solid' },
+                        { x: 1730, y: 230, w: 150, h: 24, type: 'solid' }, // مكان المفتاح الذهبي!
+
+                        { x: 2320, y: 405, w: 160, h: 24, type: 'solid' },
+                        { x: 2580, y: 315, w: 170, h: 24, type: 'solid' },
+                        { x: 2860, y: 400, w: 150, h: 24, type: 'solid' },
+
+                        { x: 3380, y: 390, w: 170, h: 24, type: 'solid' }
+                    ];
+
+                    // أشواك كريستالية حادة (تُفقد قلباً عند لمسها)
+                    spikes = [
+                        { x: 430, y: GROUND_Y - 22, w: 66, h: 22, dir: 'up' },
+                        { x: 1350, y: GROUND_Y - 22, w: 88, h: 22, dir: 'up' },
+                        { x: 2480, y: GROUND_Y - 22, w: 88, h: 22, dir: 'up' },
+                        { x: 3440, y: GROUND_Y - 22, w: 66, h: 22, dir: 'up' }
+                    ];
+
+                    // كرات ظل / غيوم حسد متحركة
+                    enemies = [
+                        { x: 720, y: GROUND_Y - 34, minX: 540, maxX: 870, vx: 2.2, alive: true, squashTimer: 0 },
+                        { x: 1750, y: GROUND_Y - 34, minX: 1520, maxX: 1960, vx: -2.5, alive: true, squashTimer: 0 },
+                        { x: 2800, y: GROUND_Y - 34, minX: 2620, maxX: 3040, vx: 2.6, alive: true, squashTimer: 0 }
+                    ];
+
+                    checkpoints = [
+                        { x: 1090, y: GROUND_Y, activated: false },
+                        { x: 2210, y: GROUND_Y, activated: false }
+                    ];
+
+                    // المفتاح السحري والبوابة المغلقة التي تحرس صندوق الذكرى ونهاية المرحلة
+                    magicKey = { x: 1805, y: 180, collected: false, phase: 0 };
+                    magicDoor = { x: 3630, y: GROUND_Y - 150, w: 34, h: 150 };
+
+                    stars = [
+                        { x: 840, y: 185, collected: false, phase: 0.2 },
+                        { x: 1535, y: 255, collected: false, phase: 1.4 },
+                        { x: 3465, y: 335, collected: false, phase: 2.7 }
+                    ];
+
+                    extraHearts = [
+                        { x: 2665, y: 265, collected: false, phase: 0.8 }
+                    ];
+
+                    memoryChest = {
+                        ...MEMORIES_DATA[2],
+                        x: 3740, y: GROUND_Y - 46, w: 46, h: 46, opened: false, bounce: 0
+                    };
+
+                    stageGoal = { x: 3980, y: GROUND_Y - 120, w: 70, h: 120, isCastle: false };
+
+                } else {
+                    // ------------------------------------------------------------------
+                    // المرحلة 4: قلعة اللقاء الأبدي (المزيج الأصعب + لقاء فارس عند القلعة!)
+                    // ------------------------------------------------------------------
+                    gameState.levelWidth = 4700;
+                    platforms = [
+                        { x: 0, y: GROUND_Y, w: 680, h: 150, type: 'ground' },
+                        { x: 290, y: 410, w: 150, h: 24, type: 'solid' },
+                        { x: 520, y: 320, w: 140, h: 24, type: 'solid' },
+
+                        // جسر متحرك ومتلاشي فوق الهاوية
+                        { x: 770, y: 360, w: 135, h: 22, type: 'moving', startX: 770, startY: 360, rangeX: 140, rangeY: 0, speed: 0.032, phase: 0, dx: 0, dy: 0 },
+                        { x: 1090, y: 300, w: 125, h: 22, type: 'crumbling', timer: 0, maxTimer: 85, broken: false, respawnTimer: 0 },
+                        { x: 1300, y: 360, w: 135, h: 22, type: 'moving', startX: 1300, startY: 360, rangeX: 0, rangeY: 95, speed: 0.035, phase: 1.2, dx: 0, dy: 0 },
+
+                        // ساحة الحرس الملكي (أعداء + أشواك + مفتاح القلعة)
+                        { x: 1550, y: GROUND_Y, w: 1120, h: 150, type: 'ground' },
+                        { x: 1750, y: 400, w: 160, h: 24, type: 'solid' },
+                        { x: 2010, y: 305, w: 160, h: 24, type: 'solid' },
+                        { x: 2270, y: 215, w: 150, h: 24, type: 'solid' }, // المفتاح الملكي بالاعلى!
+                        { x: 2470, y: 380, w: 150, h: 24, type: 'solid' },
+
+                        // الجسر الأخير المؤدي لبوابة القلعة
+                        { x: 2770, y: 430, w: 130, h: 22, type: 'crumbling', timer: 0, maxTimer: 85, broken: false, respawnTimer: 0 },
+                        { x: 2990, y: 360, w: 140, h: 22, type: 'moving', startX: 2990, startY: 360, rangeX: 160, rangeY: 0, speed: 0.036, phase: 0.6, dx: 0, dy: 0 },
+
+                        // أرضية القلعة الملكية
+                        { x: 3360, y: GROUND_Y, w: 1340, h: 150, type: 'ground' },
+                        { x: 3560, y: 390, w: 170, h: 24, type: 'solid' }
+                    ];
+
+                    spikes = [
+                        { x: 430, y: GROUND_Y - 22, w: 66, h: 22, dir: 'up' },
+                        { x: 1930, y: GROUND_Y - 22, w: 88, h: 22, dir: 'up' },
+                        { x: 2350, y: GROUND_Y - 22, w: 88, h: 22, dir: 'up' },
+                        { x: 3590, y: GROUND_Y - 22, w: 88, h: 22, dir: 'up' }
+                    ];
+
+                    enemies = [
+                        { x: 1800, y: GROUND_Y - 34, minX: 1620, maxX: 1900, vx: 2.5, alive: true, squashTimer: 0 },
+                        { x: 2220, y: GROUND_Y - 34, minX: 2040, maxX: 2320, vx: -2.7, alive: true, squashTimer: 0 },
+                        { x: 3820, y: GROUND_Y - 34, minX: 3700, maxX: 3960, vx: 2.8, alive: true, squashTimer: 0 }
+                    ];
+
+                    checkpoints = [
+                        { x: 1600, y: GROUND_Y, activated: false },
+                        { x: 3420, y: GROUND_Y, activated: false }
+                    ];
+
+                    magicKey = { x: 2345, y: 165, collected: false, phase: 0 };
+                    magicDoor = { x: 4030, y: GROUND_Y - 150, w: 34, h: 150 };
+
+                    stars = [
+                        { x: 590, y: 265, collected: false, phase: 0.3 },
+                        { x: 2090, y: 250, collected: false, phase: 1.6 },
+                        { x: 3645, y: 335, collected: false, phase: 2.8 }
+                    ];
+
+                    extraHearts = [
+                        { x: 2545, y: 330, collected: false, phase: 0.9 },
+                        { x: 3480, y: 480, collected: false, phase: 2.1 }
+                    ];
+
+                    memoryChest = {
+                        ...MEMORIES_DATA[3],
+                        x: 4130, y: GROUND_Y - 46, w: 46, h: 46, opened: false, bounce: 0
+                    };
+
+                    stageGoal = { x: 4340, y: GROUND_Y - 220, w: 230, h: 220, isCastle: true };
+                }
+
+                // توليد عناصر الخلفية المناسبة للمرحلة
+                bgDecor = [];
+                for (let i = 0; i < 75; i++) {
+                    bgDecor.push({
+                        x: Math.random() * 2200,
+                        y: Math.random() * 440,
+                        r: 1 + Math.random() * 2.2,
+                        speed: 0.1 + Math.random() * 0.25,
+                        phase: Math.random() * Math.PI * 2
+                    });
+                }
+
+                gameState.mode = autoStart ? 'playing' : 'start';
+                updateHUD();
+                closeAllModals(autoStart);
+            }
+
+            function closeAllModals(hideStart = true) {
+                if (hideStart) document.getElementById('start-overlay').classList.add('hidden');
+                document.getElementById('level-select-modal').classList.add('hidden');
+                document.getElementById('memory-modal').classList.add('hidden');
+                document.getElementById('stage-complete-modal').classList.add('hidden');
+                document.getElementById('gameover-modal').classList.add('hidden');
+                document.getElementById('victory-modal').classList.add('hidden');
+            }
+
+            /**
+             * ============================================================================
+             * 6. تحديث الواجهة العلوية وخريطة المراحل
+             * ============================================================================
+             */
+            function updateHUD() {
+                const meta = STAGES_META[gameState.currentStageId - 1];
+                document.getElementById('hud-stage-icon').textContent = meta.icon;
+                document.getElementById('hud-stage-name').textContent = `المرحلة ${meta.id}: ${meta.name}`;
+
+                // رسم القلوب الثلاثة
+                const heartsHtml = [];
+                for (let i = 0; i < 3; i++) {
+                    heartsHtml.push(i < gameState.lives ? '<span>❤️</span>' : '<span class="opacity-30">🖤</span>');
+                }
+                document.getElementById('hud-lives').innerHTML = heartsHtml.join('');
+
+                document.getElementById('hud-stars').textContent = `${gameState.starsCollectedInRun}/3`;
+
+                const keyBadge = document.getElementById('hud-key-badge');
+                if (meta.hasKey) {
+                    keyBadge.classList.remove('hidden');
+                    const keyStatus = document.getElementById('hud-key-status');
+                    if (gameState.doorOpened) {
+                        keyStatus.textContent = 'البوابة مفتوحة ✓';
+                        keyBadge.className = 'glass-hud px-3 py-1.5 rounded-2xl flex items-center gap-1.5 text-xs sm:text-sm font-bold text-emerald-300 border-emerald-400/50';
+                    } else if (gameState.hasKey) {
+                        keyStatus.textContent = 'المفتاح معكِ! ✨';
+                        keyBadge.className = 'glass-hud px-3 py-1.5 rounded-2xl flex items-center gap-1.5 text-xs sm:text-sm font-bold text-amber-300 border-amber-400/70 animate-pulse';
+                    } else {
+                        keyStatus.textContent = 'ابحثي عن المفتاح';
+                        keyBadge.className = 'glass-hud px-3 py-1.5 rounded-2xl flex items-center gap-1.5 text-xs sm:text-sm font-bold text-purple-200 border-white/15';
+                    }
+                } else {
+                    keyBadge.classList.add('hidden');
+                }
+            }
+
+            function renderLevelSelectGrid() {
+                const grid = document.getElementById('levels-grid');
+                grid.innerHTML = '';
+
+                STAGES_META.forEach((stage) => {
+                    const isUnlocked = stage.id <= progress.unlockedStage;
+                    const earnedStars = progress.stageStars[stage.id] || 0;
+                    const card = document.createElement('div');
+                    card.className = `p-4 sm:p-5 rounded-2xl border transition flex flex-col justify-between ${
+                        isUnlocked
+                            ? 'bg-purple-950/50 border-pink-500/40 hover:border-pink-400 cursor-pointer hover:scale-[1.02]'
+                            : 'bg-black/40 border-white/10 opacity-60 cursor-not-allowed'
+                    }`;
+
+                    let starsIcons = '';
+                    for (let s = 1; s <= 3; s++) {
+                        starsIcons += s <= earnedStars ? '<span>⭐</span>' : '<span class="opacity-25">⭐</span>';
+                    }
+
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-2xl">${isUnlocked ? stage.icon : '🔒'}</span>
+                                <div class="flex gap-1 text-sm">${starsIcons}</div>
+                            </div>
+                            <h3 class="text-base sm:text-lg font-bold text-white mb-1">المرحلة ${stage.id}: ${stage.name}</h3>
+                            <p class="text-xs text-purple-200/75 leading-relaxed mb-3">${stage.subtitle}</p>
+                        </div>
+                        <div class="text-xs font-bold ${isUnlocked ? 'text-pink-400' : 'text-slate-400'}">
+                            ${isUnlocked ? 'اضغطي للعب الآن ◀' : 'أتمّي المرحلة السابقة لفتحها'}
+                        </div>
+                    `;
+
+                    if (isUnlocked) {
+                        card.addEventListener('click', () => {
+                            sfx.init();
+                            loadStage(stage.id, true);
+                        });
+                    }
+                    grid.appendChild(card);
+                });
+            }
+
+            /**
+             * ============================================================================
+             * 7. ميكانيكيات التحكم (القفز المزدوج، الاندفاع السريع، الجسيمات)
+             * ============================================================================
+             */
+            function spawnParticles(x, y, colors, count = 14, speedMult = 1) {
+                for (let i = 0; i < count; i++) {
+                    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+                    const speed = (2 + Math.random() * 4.2) * speedMult;
+                    particles.push({
+                        x,
+                        y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed - 1.4,
+                        life: 1,
+                        decay: 0.02 + Math.random() * 0.015,
+                        color: colors[i % colors.length],
+                        size: 3 + Math.random() * 4
+                    });
+                }
+            }
+
+            function triggerJump() {
+                if (gameState.mode !== 'playing') return;
+
+                if (player.onGround || player.coyoteTimer > 0) {
+                    player.vy = JUMP_FORCE;
+                    player.onGround = false;
+                    player.standingPlatform = null;
+                    player.coyoteTimer = 0;
+                    player.jumpsRemaining = 1;
+                    sfx.jump();
+                    spawnParticles(player.x + player.w / 2, player.y + player.h, ['#f472b6', '#c084fc'], 7, 0.6);
+                } else if (player.jumpsRemaining > 0) {
+                    player.vy = DOUBLE_JUMP_FORCE;
+                    player.jumpsRemaining = 0;
+                    sfx.doubleJump();
+                    spawnParticles(player.x + player.w / 2, player.y + player.h, ['#fbbf24', '#f472b6'], 11, 0.85);
+                }
+            }
+
+            function triggerDash() {
+                if (gameState.mode !== 'playing') return;
+                if (player.dashCooldown > 0 || player.dashTimer > 0) return;
+
+                player.dashTimer = DASH_DURATION;
+                player.dashCooldown = DASH_COOLDOWN;
+                player.vy = 0;
+                sfx.dash();
+                spawnParticles(player.x + player.w / 2, player.y + player.h / 2, ['#fbbf24', '#38bdf8', '#f472b6'], 14, 1.1);
+            }
+
+            /**
+             * معالجة فقدان قلب أو السقوط
+             */
+            function damagePlayer(fromPit = false) {
+                if (!fromPit && player.invulnTimer > 0) return;
+
+                gameState.lives--;
+                gameState.screenShake = 12;
+                sfx.hurt();
+                spawnParticles(player.x + player.w / 2, player.y + player.h / 2, ['#f43f5e', '#ffffff'], 20, 1.2);
+                updateHUD();
+
+                if (gameState.lives <= 0) {
+                    gameState.mode = 'gameover';
+                    keys.left = false;
+                    keys.right = false;
+                    document.getElementById('gameover-modal').classList.remove('hidden');
+                    return;
+                }
+
+                // العودة لآخر نقطة حفظ آمنة
+                player.x = gameState.checkpoint.x;
+                player.y = gameState.checkpoint.y;
+                player.vx = 0;
+                player.vy = 0;
+                player.dashTimer = 0;
+                player.invulnTimer = 75; // حماية مؤقتة لثانية وربع
+                spawnParticles(player.x + player.w / 2, player.y + player.h / 2, ['#ec4899', '#a855f7'], 16, 1);
+            }
+
+            /**
+             * ============================================================================
+             * 8. تحديث الفيزياء والتصادمات في كل إطار
+             * ============================================================================
+             */
+            function updatePhysics() {
+                gameState.time += 0.04;
+                if (gameState.screenShake > 0) gameState.screenShake--;
+
+                // تحديث الجزيئات
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.12;
+                    p.life -= p.decay;
+                    if (p.life <= 0) particles.splice(i, 1);
+                }
+
+                // ألعاب نارية مستمرة عند الفوز النهائي
+                if (gameState.mode === 'victory' && Math.random() < 0.16) {
+                    const fxX = gameState.cameraX + 100 + Math.random() * (viewWidth - 200);
+                    const fxY = 90 + Math.random() * 240;
+                    spawnParticles(fxX, fxY, ['#ec4899', '#fbbf24', '#a855f7', '#38bdf8', '#fb7185'], 24, 1.35);
+                }
+
+                if (gameState.mode !== 'playing') return;
+
+                const meta = STAGES_META[gameState.currentStageId - 1];
+
+                // تحديث المنصات المتحركة والمتلاشية
+                for (const plat of platforms) {
+                    if (plat.type === 'moving') {
+                        const prevX = plat.x;
+                        const prevY = plat.y;
+                        plat.x = plat.startX + Math.sin(gameState.time * 1.4 + plat.phase) * plat.rangeX;
+                        plat.y = plat.startY + Math.cos(gameState.time * 1.4 + plat.phase) * plat.rangeY;
+                        plat.dx = plat.x - prevX;
+                        plat.dy = plat.y - prevY;
+                    } else if (plat.type === 'crumbling') {
+                        if (plat.broken) {
+                            plat.respawnTimer--;
+                            if (plat.respawnTimer <= 0) {
+                                plat.broken = false;
+                                plat.timer = 0;
+                            }
+                        } else if (plat.timer > 0) {
+                            plat.timer++;
+                            if (plat.timer >= plat.maxTimer) {
+                                plat.broken = true;
+                                plat.respawnTimer = 180; // تعود بعد 3 ثوانٍ
+                                spawnParticles(plat.x + plat.w / 2, plat.y + 10, ['#38bdf8', '#c084fc'], 12, 0.8);
+                            }
+                        }
+                    }
+                }
+
+                // نقل مها مع المنصة المتحركة إذا كانت تقف عليها
+                if (player.onGround && player.standingPlatform && player.standingPlatform.type === 'moving') {
+                    player.x += player.standingPlatform.dx;
+                    player.y += player.standingPlatform.dy;
+                }
+
+                // مؤقتات الحماية والاندفاع
+                if (player.invulnTimer > 0) player.invulnTimer--;
+                if (player.dashCooldown > 0) player.dashCooldown--;
+
+                // الحركة الأفقية أو الاندفاع السريع
+                if (player.dashTimer > 0) {
+                    player.dashTimer--;
+                    player.vx = player.facing * DASH_SPEED;
+                    player.vy = 0;
+                    if (player.dashTimer % 2 === 0) {
+                        spawnParticles(player.x + player.w / 2, player.y + player.h / 2, ['#fbbf24', '#ec4899'], 2, 0.3);
+                    }
+                } else {
+                    if (keys.left && !keys.right) {
+                        player.vx = -MOVE_SPEED;
+                        player.facing = -1;
+                        player.animFrame += 0.23;
+                    } else if (keys.right && !keys.left) {
+                        player.vx = MOVE_SPEED;
+                        player.facing = 1;
+                        player.animFrame += 0.23;
+                    } else {
+                        player.vx *= 0.78;
+                        if (Math.abs(player.vx) < 0.2) player.vx = 0;
+                        player.animFrame = 0;
+                    }
+
+                    // تطبيق نسيم المرحلة 2 الخفيف أثناء القفز
+                    if (!player.onGround && meta.windX !== 0) {
+                        player.vx += meta.windX;
+                    }
+                }
+
+                player.x += player.vx;
+                if (player.x < 10) player.x = 10;
+                if (player.x > gameState.levelWidth - player.w - 20) player.x = gameState.levelWidth - player.w - 20;
+
+                // التصادم الأفقي مع البوابة السحرية المغلقة
+                if (magicDoor && !gameState.doorOpened) {
+                    const overlapY = player.y + player.h > magicDoor.y && player.y < magicDoor.y + magicDoor.h;
+                    if (overlapY && player.x + player.w > magicDoor.x && player.x < magicDoor.x + magicDoor.w) {
+                        if (gameState.hasKey) {
+                            // فتح البوابة بالمفتاح الذهبي!
+                            gameState.doorOpened = true;
+                            sfx.openDoor();
+                            updateHUD();
+                            spawnParticles(magicDoor.x + 17, magicDoor.y + 75, ['#fbbf24', '#ec4899', '#ffffff'], 28, 1.3);
+                        } else {
+                            // منع المرور حتى تجد مها المفتاح
+                            player.x = magicDoor.x - player.w;
+                            player.vx = 0;
+                        }
+                    }
+                }
+
+                // الجاذبية والحركة العمودية
+                if (player.dashTimer <= 0) {
+                    if (player.onGround) {
+                        player.coyoteTimer = 7;
+                    } else if (player.coyoteTimer > 0) {
+                        player.coyoteTimer--;
+                    }
+
+                    player.vy += GRAVITY;
+                    if (player.vy > 15) player.vy = 15;
+                }
+
+                const prevBottom = player.y + player.h;
+                player.y += player.vy;
+                player.onGround = false;
+                player.standingPlatform = null;
+
+                // التصادم مع المنصات
+                for (const plat of platforms) {
+                    if (plat.type === 'crumbling' && plat.broken) continue;
+                    const withinX = player.x + player.w - 6 > plat.x && player.x + 6 < plat.x + plat.w;
+                    if (withinX && player.vy >= 0 && prevBottom <= plat.y + 14 && player.y + player.h >= plat.y) {
+                        player.y = plat.y - player.h;
+                        player.vy = 0;
+                        player.onGround = true;
+                        player.standingPlatform = plat;
+                        player.jumpsRemaining = 2;
+
+                        // بدء عداد التلاشي عند الوقوف على منصة متلاشية
+                        if (plat.type === 'crumbling' && plat.timer === 0) {
+                            plat.timer = 1;
+                        }
+                    }
+                }
+
+                // تحديث وقت السماح بالقفز على المنصات المتحركة
+                if (player.onGround) player.coyoteTimer = 7;
+
+                // التصادم مع الأشواك
+                for (const sp of spikes) {
+                    if (
+                        player.x + player.w - 7 > sp.x &&
+                        player.x + 7 < sp.x + sp.w &&
+                        player.y + player.h - 4 > sp.y &&
+                        player.y + 6 < sp.y + sp.h
+                    ) {
+                        damagePlayer(false);
+                        return;
+                    }
+                }
+
+                // تحديث الأعداء (غيوم الحسد / كرات الظل) والقتال على طريقة ماريو
+                for (const en of enemies) {
+                    if (!en.alive) {
+                        if (en.squashTimer > 0) en.squashTimer--;
+                        continue;
+                    }
+
+                    en.x += en.vx;
+                    if (en.x <= en.minX || en.x >= en.maxX) {
+                        en.vx *= -1;
+                    }
+
+                    const enW = 36;
+                    const enH = 34;
+                    const overlapX = player.x + player.w - 4 > en.x && player.x + 4 < en.x + enW;
+                    const overlapY = player.y + player.h > en.y && player.y < en.y + enH;
+
+                    if (overlapX && overlapY) {
+                        // هل قفزت مها فوق العدو من الأعلى؟ (سحقه!)
+                        if (player.vy > 0 && prevBottom <= en.y + 18) {
+                            en.alive = false;
+                            en.squashTimer = 25;
+                            player.vy = JUMP_FORCE * 0.78; // ارتداد للأعلى بعد السحق
+                            player.jumpsRemaining = 1;
+                            sfx.stompEnemy();
+                            spawnParticles(en.x + 18, en.y + 17, ['#c084fc', '#ec4899', '#fbbf24'], 18, 1.1);
+                        } else if (player.dashTimer > 0) {
+                            // الاندفاع السريع يهزم العدو أيضاً!
+                            en.alive = false;
+                            en.squashTimer = 25;
+                            sfx.stompEnemy();
+                            spawnParticles(en.x + 18, en.y + 17, ['#fbbf24', '#ec4899'], 18, 1.2);
+                        } else {
+                            damagePlayer(false);
+                            return;
+                        }
+                    }
+                }
+
+                // تفعيل نقاط الحفظ (فوانيس الحب)
+                for (const cp of checkpoints) {
+                    if (!cp.activated && Math.abs((player.x + player.w / 2) - cp.x) < 42) {
+                        cp.activated = true;
+                        gameState.checkpoint = { x: cp.x - 15, y: cp.y - 60 };
+                        sfx.collectHeart();
+                        spawnParticles(cp.x, cp.y - 45, ['#ec4899', '#fbbf24'], 16, 0.9);
+                    }
+                }
+
+                // جمع المفتاح الذهبي
+                if (magicKey && !magicKey.collected) {
+                    const dist = Math.hypot((player.x + player.w / 2) - magicKey.x, (player.y + player.h / 2) - magicKey.y);
+                    if (dist < 36) {
+                        magicKey.collected = true;
+                        gameState.hasKey = true;
+                        sfx.collectKey();
+                        updateHUD();
+                        spawnParticles(magicKey.x, magicKey.y, ['#fbbf24', '#fde047', '#ffffff'], 22, 1.1);
+                    }
+                }
+
+                // جمع النجوم السرية (3 في كل مرحلة)
+                for (const st of stars) {
+                    if (st.collected) continue;
+                    const dist = Math.hypot((player.x + player.w / 2) - st.x, (player.y + player.h / 2) - st.y);
+                    if (dist < 35) {
+                        st.collected = true;
+                        gameState.starsCollectedInRun++;
+                        if (gameState.starsCollectedInRun > progress.stageStars[gameState.currentStageId]) {
+                            progress.stageStars[gameState.currentStageId] = gameState.starsCollectedInRun;
+                        }
+                        sfx.collectStar();
+                        updateHUD();
+                        spawnParticles(st.x, st.y, ['#fbbf24', '#fde047', '#ffffff'], 18, 1.15);
+                    }
+                }
+
+                // جمع قلوب استعادة الحياة الإضافية
+                for (const h of extraHearts) {
+                    if (h.collected) continue;
+                    const dist = Math.hypot((player.x + player.w / 2) - h.x, (player.y + player.h / 2) - h.y);
+                    if (dist < 34) {
+                        h.collected = true;
+                        if (gameState.lives < 3) gameState.lives++;
+                        sfx.collectHeart();
+                        updateHUD();
+                        spawnParticles(h.x, h.y, ['#f43f5e', '#fda4af'], 15, 1);
+                    }
+                }
+
+                // فتح صندوق الذكرى الخاص بالمرحلة
+                if (memoryChest) {
+                    if (memoryChest.bounce < 0) {
+                        memoryChest.bounce += 1.2;
+                        if (memoryChest.bounce > 0) memoryChest.bounce = 0;
+                    }
+                    const overlapX = player.x + player.w > memoryChest.x && player.x < memoryChest.x + memoryChest.w;
+                    const overlapY = player.y + player.h > memoryChest.y && player.y < memoryChest.y + memoryChest.h;
+
+                    if (overlapX && overlapY && !memoryChest.opened) {
+                        openMemoryChest(memoryChest);
+                    }
+                }
+
+                // التحقق من السقوط في الهاوية
+                if (player.y > LOGICAL_HEIGHT + 40) {
+                    damagePlayer(true);
+                    return;
+                }
+
+                // التحقق من الوصول إلى بوابة نهاية المرحلة أو قلعة فارس
+                if (stageGoal && player.x + player.w >= stageGoal.x + 25) {
+                    handleStageReached();
+                }
+
+                // تحديث الكاميرا بسلاسة
+                const targetCamX = player.x - viewWidth * 0.34;
+                const maxCamX = Math.max(0, gameState.levelWidth - viewWidth);
+                const clampedCam = Math.max(0, Math.min(targetCamX, maxCamX));
+                gameState.cameraX += (clampedCam - gameState.cameraX) * 0.11;
+            }
+
+            function openMemoryChest(chest) {
+                chest.opened = true;
+                chest.bounce = -10;
+                progress.memoriesRead[gameState.currentStageId] = true;
+                gameState.checkpoint = { x: chest.x, y: chest.y - 65 };
+                sfx.openMemory();
+                spawnParticles(chest.x + chest.w / 2, chest.y + chest.h / 2, ['#ec4899', '#fbbf24', '#c084fc'], 26, 1.2);
+
+                keys.left = false;
+                keys.right = false;
+                gameState.mode = 'memory';
+
+                document.getElementById('memory-badge').textContent = `ذكرى المرحلة ${chest.stage} • تم حفظ التقدم`;
+                document.getElementById('memory-emoji').textContent = chest.emoji;
+                document.getElementById('memory-title').textContent = chest.title;
+                document.getElementById('memory-date').textContent = chest.date;
+                document.getElementById('memory-text').textContent = chest.text;
+                document.getElementById('memory-modal').classList.remove('hidden');
+            }
+
+            function handleStageReached() {
+                keys.left = false;
+                keys.right = false;
+
+                if (gameState.currentStageId < 4) {
+                    // فتح المرحلة التالية
+                    progress.unlockedStage = Math.max(progress.unlockedStage, gameState.currentStageId + 1);
+                    gameState.mode = 'stageClear';
+                    sfx.stageClear();
+
+                    const meta = STAGES_META[gameState.currentStageId - 1];
+                    document.getElementById('stage-complete-title').textContent = `أتممتِ "${meta.name}" بنجاح!`;
+                    document.getElementById('stage-complete-subtitle').textContent = `تم فتح المرحلة ${gameState.currentStageId + 1}: ${STAGES_META[gameState.currentStageId].name}`;
+
+                    const starsHtml = [];
+                    for (let i = 1; i <= 3; i++) {
+                        starsHtml.push(i <= gameState.starsCollectedInRun ? '<span>⭐</span>' : '<span class="opacity-25">⭐</span>');
+                    }
+                    document.getElementById('stage-complete-stars').innerHTML = starsHtml.join('');
+                    document.getElementById('stage-complete-modal').classList.remove('hidden');
+                } else {
+                    // الفوز النهائي في المرحلة 4 عند لقاء فارس!
+                    gameState.mode = 'victory';
+                    sfx.victory();
+
+                    const totalStars = Object.values(progress.stageStars).reduce((a, b) => a + b, 0);
+                    const totalMemories = Object.values(progress.memoriesRead).filter(Boolean).length;
+
+                    document.getElementById('final-total-stars').textContent = `${totalStars} / 12`;
+                    document.getElementById('final-total-memories').textContent = `${totalMemories} / 4`;
+                    document.getElementById('victory-modal').classList.remove('hidden');
+                }
+            }
+
+            /**
+             * ============================================================================
+             * 9. دوال الرسم البصري الغني بالتفاصيل على Canvas
+             * ============================================================================
+             */
+            function render() {
+                const meta = STAGES_META[gameState.currentStageId - 1];
+
+                ctx.save();
+                ctx.scale(scaleFactor, scaleFactor);
+
+                // اهتزاز خفيف للكاميرا عند الاصطدام
+                if (gameState.screenShake > 0) {
+                    const sx = (Math.random() - 0.5) * gameState.screenShake;
+                    const sy = (Math.random() - 0.5) * gameState.screenShake;
+                    ctx.translate(sx, sy);
+                }
+
+                // 1. رسم السماء المتدرجة والخلفيات متعددة الطبقات
+                drawStageBackground(meta);
+
+                ctx.save();
+                ctx.translate(-gameState.cameraX, 0);
+
+                // 2. رسم فوانيس نقاط الحفظ
+                drawCheckpoints();
+
+                // 3. رسم المنصات بأنواعها الثلاثة (عادية، متحركة، متلاشية)
+                drawPlatforms(meta);
+
+                // 4. رسم الأشواك الكريستالية
+                drawSpikes();
+
+                // 5. رسم المفتاح السحري والبوابة المغلقة
+                drawKeyAndDoor();
+
+                // 6. رسم بوابة المرحلة أو قلعة اللقاء الأبدي مع فارس
+                drawGoalOrCastle();
+
+                // 7. رسم صندوق الذكرى
+                drawMemoryChest();
+
+                // 8. رسم النجوم والقلوب الإضافية
+                drawCollectibles();
+
+                // 9. رسم الأعداء (غيوم الحسد)
+                drawEnemies();
+
+                // 10. رسم شخصية مها
+                drawMahaCharacter();
+
+                // 11. رسم الجزيئات
+                for (const p of particles) {
+                    ctx.globalAlpha = Math.max(0, p.life);
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+
+                ctx.restore();
+                ctx.restore();
+            }
+
+            function drawStageBackground(meta) {
+                const skyGrad = ctx.createLinearGradient(0, 0, 0, LOGICAL_HEIGHT);
+                skyGrad.addColorStop(0, meta.skyTop);
+                skyGrad.addColorStop(1, meta.skyBottom);
+                ctx.fillStyle = skyGrad;
+                ctx.fillRect(0, 0, viewWidth, LOGICAL_HEIGHT);
+
+                // قمر أو هالة سديمية حسب المرحلة
+                const moonX = viewWidth * 0.8;
+                const moonY = 105;
+                const glow = ctx.createRadialGradient(moonX, moonY, 10, moonX, moonY, 110);
+                glow.addColorStop(0, meta.id === 4 ? 'rgba(251, 191, 36, 0.45)' : 'rgba(236, 72, 153, 0.32)');
+                glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(moonX, moonY, 110, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = meta.id === 4 ? '#fde047' : '#fbcfe8';
+                ctx.beginPath();
+                ctx.arc(moonX, moonY, 24, 0, Math.PI * 2);
+                ctx.fill();
+
+                // النجوم / الكريستالات المتلألئة في الخلفية
+                for (const st of bgDecor) {
+                    const sx = ((st.x - gameState.cameraX * st.speed) % viewWidth + viewWidth) % viewWidth;
+                    const alpha = 0.3 + 0.7 * Math.abs(Math.sin(gameState.time + st.phase));
+                    ctx.fillStyle = meta.id === 3 ? `rgba(192, 132, 252, ${alpha})` : `rgba(255, 255, 255, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(sx, st.y, st.r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // طبقة جبال / سقف كهف بعيد (Parallax)
+                ctx.fillStyle = 'rgba(9, 4, 20, 0.65)';
+                ctx.beginPath();
+                ctx.moveTo(0, LOGICAL_HEIGHT);
+                for (let x = 0; x <= viewWidth + 80; x += 40) {
+                    const wx = x + gameState.cameraX * 0.22;
+                    const y = 440 - Math.sin(wx * 0.004) * 55 - Math.cos(wx * 0.01) * 25;
+                    ctx.lineTo(x, y);
+                }
+                ctx.lineTo(viewWidth, LOGICAL_HEIGHT);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            function drawPlatforms(meta) {
+                for (const plat of platforms) {
+                    if (plat.type === 'crumbling' && plat.broken) continue;
+                    if (plat.x + plat.w < gameState.cameraX - 60 || plat.x > gameState.cameraX + viewWidth + 60) continue;
+
+                    ctx.save();
+                    // اهتزاز بصري للمنصة المتلاشية قبل اختفائها
+                    if (plat.type === 'crumbling' && plat.timer > 0) {
+                        const shake = (plat.timer / plat.maxTimer) * 3.5;
+                        ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+                        ctx.globalAlpha = Math.max(0.25, 1 - (plat.timer / plat.maxTimer) * 0.75);
+                    }
+
+                    if (plat.type === 'ground') {
+                        const g = ctx.createLinearGradient(0, plat.y, 0, plat.y + plat.h);
+                        g.addColorStop(0, meta.platformFill);
+                        g.addColorStop(1, '#090414');
+                        ctx.fillStyle = g;
+                        ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+
+                        ctx.fillStyle = meta.accentColor;
+                        ctx.fillRect(plat.x, plat.y, plat.w, 6);
+                    } else {
+                        ctx.fillStyle = plat.type === 'moving' ? '#1e3a8a' : plat.type === 'crumbling' ? '#4c1d95' : meta.platformFill;
+                        roundRect(ctx, plat.x, plat.y, plat.w, plat.h, 11);
+                        ctx.fill();
+
+                        ctx.strokeStyle = plat.type === 'moving' ? '#38bdf8' : plat.type === 'crumbling' ? '#f472b6' : meta.accentColor;
+                        ctx.lineWidth = 2;
+                        roundRect(ctx, plat.x, plat.y, plat.w, plat.h, 11);
+                        ctx.stroke();
+
+                        // أيقونة صغيرة توضح نوع المنصة الخاصة
+                        if (plat.type === 'moving') {
+                            ctx.fillStyle = '#bae6fd';
+                            ctx.font = '12px Cairo, sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('⇄', plat.x + plat.w / 2, plat.y + 15);
+                        } else if (plat.type === 'crumbling') {
+                            ctx.fillStyle = '#fbcfe8';
+                            ctx.font = '11px Cairo, sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('⏳', plat.x + plat.w / 2, plat.y + 15);
+                        }
+                    }
+
+                    ctx.restore();
+                }
+            }
+
+            function drawSpikes() {
+                for (const sp of spikes) {
+                    const count = Math.floor(sp.w / 22);
+                    for (let i = 0; i < count; i++) {
+                        const sx = sp.x + i * 22;
+                        ctx.fillStyle = '#f43f5e';
+                        ctx.beginPath();
+                        ctx.moveTo(sx, sp.y + sp.h);
+                        ctx.lineTo(sx + 11, sp.y);
+                        ctx.lineTo(sx + 22, sp.y + sp.h);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        ctx.strokeStyle = '#fecdd3';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            function drawEnemies() {
+                for (const en of enemies) {
+                    if (!en.alive && en.squashTimer <= 0) continue;
+
+                    ctx.save();
+                    ctx.translate(en.x + 18, en.y + 34);
+                    if (!en.alive) {
+                        ctx.scale(1.3, 0.25);
+                    } else {
+                        const bob = Math.sin(gameState.time * 5 + en.x) * 2;
+                        ctx.translate(0, bob);
+                    }
+
+                    // جسم غيمة الحسد البنفسجية الداكنة
+                    ctx.fillStyle = '#4c0519';
+                    ctx.beginPath();
+                    ctx.arc(0, -16, 17, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.strokeStyle = '#fb7185';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // عيون غاضبة لطيفة
+                    ctx.fillStyle = '#fef08a';
+                    ctx.beginPath();
+                    ctx.arc(-6, -18, 3, 0, Math.PI * 2);
+                    ctx.arc(6, -18, 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.restore();
+                }
+            }
+
+            function drawCheckpoints() {
+                for (const cp of checkpoints) {
+                    // عمود الفانوس
+                    ctx.fillStyle = '#64748b';
+                    ctx.fillRect(cp.x - 2, cp.y - 52, 4, 52);
+
+                    // رأس الفانوس
+                    ctx.fillStyle = cp.activated ? '#ec4899' : '#334155';
+                    ctx.beginPath();
+                    ctx.arc(cp.x, cp.y - 56, 10, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (cp.activated) {
+                        const g = ctx.createRadialGradient(cp.x, cp.y - 56, 4, cp.x, cp.y - 56, 36);
+                        g.addColorStop(0, 'rgba(236, 72, 153, 0.6)');
+                        g.addColorStop(1, 'rgba(236, 72, 153, 0)');
+                        ctx.fillStyle = g;
+                        ctx.beginPath();
+                        ctx.arc(cp.x, cp.y - 56, 36, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+
+            function drawKeyAndDoor() {
+                if (magicKey && !magicKey.collected) {
+                    const ky = magicKey.y + Math.sin(gameState.time * 3.5) * 6;
+                    const g = ctx.createRadialGradient(magicKey.x, ky, 4, magicKey.x, ky, 34);
+                    g.addColorStop(0, 'rgba(251, 191, 36, 0.55)');
+                    g.addColorStop(1, 'rgba(251, 191, 36, 0)');
+                    ctx.fillStyle = g;
+                    ctx.beginPath();
+                    ctx.arc(magicKey.x, ky, 34, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.font = '26px Cairo, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🗝️', magicKey.x, ky);
+                }
+
+                if (magicDoor && !gameState.doorOpened) {
+                    ctx.fillStyle = 'rgba(236, 72, 153, 0.25)';
+                    ctx.fillRect(magicDoor.x, magicDoor.y, magicDoor.w, magicDoor.h);
+                    ctx.strokeStyle = '#fbbf24';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(magicDoor.x, magicDoor.y, magicDoor.w, magicDoor.h);
+
+                    ctx.font = '22px Cairo, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('🔒', magicDoor.x + magicDoor.w / 2, magicDoor.y + magicDoor.h / 2);
+                }
+            }
+
+            function drawMemoryChest() {
+                if (!memoryChest) return;
+                const drawY = memoryChest.y + memoryChest.bounce + Math.sin(gameState.time * 2.5) * 3;
+
+                if (!memoryChest.opened) {
+                    const g = ctx.createRadialGradient(
+                        memoryChest.x + 23, drawY + 23, 5,
+                        memoryChest.x + 23, drawY + 23, 44
+                    );
+                    g.addColorStop(0, 'rgba(236, 72, 153, 0.6)');
+                    g.addColorStop(1, 'rgba(236, 72, 153, 0)');
+                    ctx.fillStyle = g;
+                    ctx.beginPath();
+                    ctx.arc(memoryChest.x + 23, drawY + 23, 44, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = memoryChest.opened ? '#4c1d95' : '#db2777';
+                roundRect(ctx, memoryChest.x, drawY, memoryChest.w, memoryChest.h, 10);
+                ctx.fill();
+
+                ctx.strokeStyle = memoryChest.opened ? '#a78bfa' : '#fde047';
+                ctx.lineWidth = 2.5;
+                roundRect(ctx, memoryChest.x, drawY, memoryChest.w, memoryChest.h, 10);
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 21px Cairo, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(memoryChest.opened ? '💌' : '🎁', memoryChest.x + 23, drawY + 24);
+            }
+
+            function drawCollectibles() {
+                for (const st of stars) {
+                    if (st.collected) continue;
+                    const sy = st.y + Math.sin(gameState.time * 3 + st.phase) * 5;
+                    drawStarShape(ctx, st.x, sy, 5, 15, 6.5, '#fbbf24');
+                }
+
+                for (const h of extraHearts) {
+                    if (h.collected) continue;
+                    const hy = h.y + Math.sin(gameState.time * 3 + h.phase) * 5;
+                    drawHeartShape(ctx, h.x, hy, 12, '#f43f5e');
+                }
+            }
+
+            function drawGoalOrCastle() {
+                if (!stageGoal) return;
+
+                if (!stageGoal.isCastle) {
+                    // بوابة انتقال سحرية بين العوالم (المراحل 1 - 3)
+                    const gx = stageGoal.x + stageGoal.w / 2;
+                    const gy = stageGoal.y + stageGoal.h / 2;
+                    const g = ctx.createRadialGradient(gx, gy, 10, gx, gy, 75);
+                    g.addColorStop(0, 'rgba(236, 72, 153, 0.7)');
+                    g.addColorStop(0.6, 'rgba(168, 85, 247, 0.3)');
+                    g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    ctx.fillStyle = g;
+                    ctx.beginPath();
+                    ctx.arc(gx, gy, 75, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.strokeStyle = '#f472b6';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.ellipse(gx, gy, 28, 52, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#fbcfe8';
+                    ctx.font = 'bold 13px Cairo, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('بوابة المرحلة التالية ✨', gx, stageGoal.y - 14);
+                } else {
+                    // قلعة اللقاء الأبدي مع فارس في نهاية المرحلة 4!
+                    const cx = stageGoal.x;
+                    const cy = stageGoal.y;
+
+                    const glow = ctx.createRadialGradient(cx + 115, cy + 110, 20, cx + 115, cy + 110, 220);
+                    glow.addColorStop(0, 'rgba(251, 191, 36, 0.35)');
+                    glow.addColorStop(1, 'rgba(236, 72, 153, 0)');
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(cx + 115, cy + 110, 220, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#3b0764';
+                    ctx.fillRect(cx + 45, cy + 60, 150, 160);
+                    ctx.fillStyle = '#4c1d95';
+                    ctx.fillRect(cx + 25, cy + 30, 40, 190);
+                    ctx.fillRect(cx + 175, cy + 30, 40, 190);
+
+                    ctx.fillStyle = '#db2777';
+                    drawTriangle(ctx, cx + 20, cy + 30, cx + 45, cy - 15, cx + 70, cy + 30);
+                    drawTriangle(ctx, cx + 170, cy + 30, cx + 195, cy - 15, cx + 220, cy + 30);
+                    drawTriangle(ctx, cx + 80, cy + 60, cx + 120, cy + 5, cx + 160, cy + 60);
+
+                    ctx.fillStyle = '#fdf2f8';
+                    ctx.beginPath();
+                    ctx.arc(cx + 120, cy + 165, 28, Math.PI, 0);
+                    ctx.lineTo(cx + 148, cy + 220);
+                    ctx.lineTo(cx + 92, cy + 220);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    const beat = 1 + Math.sin(gameState.time * 4) * 0.14;
+                    drawHeartShape(ctx, cx + 120, cy - 28, 18 * beat, '#f43f5e');
+
+                    // شخصية فارس بانتظار مها أمام القلعة
+                    const fx = cx + 40;
+                    const fy = GROUND_Y;
+                    ctx.save();
+                    ctx.translate(fx, fy);
+
+                    ctx.fillStyle = '#93c5fd';
+                    ctx.font = 'bold 14px Cairo, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('فارس 💙', 0, -64);
+
+                    ctx.fillStyle = '#2563eb';
+                    roundRect(ctx, -11, -32, 22, 26, 6);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#fed7aa';
+                    ctx.beginPath();
+                    ctx.arc(0, -40, 12, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#0f172a';
+                    ctx.beginPath();
+                    ctx.arc(0, -43, 12, Math.PI, 0);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#0f172a';
+                    ctx.beginPath();
+                    ctx.arc(-5, -40, 2.2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    drawHeartShape(ctx, -16, -24, 8, '#ec4899');
+                    ctx.restore();
+                }
+            }
+
+            function drawMahaCharacter() {
+                // وميض شفاف أثناء الحماية المؤقتة بعد الإصابة
+                if (player.invulnTimer > 0 && Math.floor(player.invulnTimer / 4) % 2 === 0) return;
+
+                const cx = player.x + player.w / 2;
+                const bottomY = player.y + player.h;
+                const walkBob = player.onGround && Math.abs(player.vx) > 0.3 ? Math.sin(player.animFrame * 2) * 3 : 0;
+
+                ctx.save();
+                ctx.translate(cx, bottomY + walkBob);
+
+                ctx.fillStyle = '#fbcfe8';
+                ctx.font = 'bold 13px Cairo, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('مها ❤️', 0, -62);
+
+                ctx.scale(player.facing, 1);
+
+                // الشعر
+                ctx.fillStyle = '#1e1b4b';
+                ctx.beginPath();
+                ctx.arc(-4, -35, 14, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillRect(-15, -35, 13, 23);
+
+                // الفستان الوردي
+                ctx.fillStyle = player.dashTimer > 0 ? '#fbbf24' : '#ec4899';
+                ctx.beginPath();
+                ctx.moveTo(0, -29);
+                ctx.lineTo(-13, -6);
+                ctx.lineTo(13, -6);
+                ctx.closePath();
+                ctx.fill();
+
+                // الرأس
+                ctx.fillStyle = '#fed7aa';
+                ctx.beginPath();
+                ctx.arc(2, -37, 11.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // التاج الذهبي
+                ctx.fillStyle = '#fbbf24';
+                ctx.beginPath();
+                ctx.moveTo(-6, -48);
+                ctx.lineTo(-3, -55);
+                ctx.lineTo(2, -50);
+                ctx.lineTo(7, -55);
+                ctx.lineTo(10, -48);
+                ctx.closePath();
+                ctx.fill();
+
+                // العين
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.arc(6, -38, 2.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // الأقدام
+                const legSwing = player.onGround ? Math.sin(player.animFrame * 2) * 5 : 4;
+                ctx.strokeStyle = '#fbcfe8';
+                ctx.lineWidth = 3.2;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(-4, -6);
+                ctx.lineTo(-4 + legSwing, 0);
+                ctx.moveTo(4, -6);
+                ctx.lineTo(4 - legSwing, 0);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            // أدوات رسم هندسية
+            function roundRect(ctx, x, y, w, h, r) {
+                ctx.beginPath();
+                ctx.moveTo(x + r, y);
+                ctx.arcTo(x + w, y, x + w, y + h, r);
+                ctx.arcTo(x + w, y + h, x, y + h, r);
+                ctx.arcTo(x, y + h, x, y, r);
+                ctx.arcTo(x, y, x + w, y, r);
+                ctx.closePath();
+            }
+
+            function drawTriangle(ctx, x1, y1, x2, y2, x3, y3) {
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.lineTo(x3, y3);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            function drawHeartShape(ctx, x, y, size, color) {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                const topCurveHeight = size * 0.3;
+                ctx.moveTo(0, topCurveHeight);
+                ctx.bezierCurveTo(0, 0, -size, 0, -size, topCurveHeight);
+                ctx.bezierCurveTo(-size, (size + topCurveHeight) / 2, 0, (size + topCurveHeight) / 1.2, 0, size);
+                ctx.bezierCurveTo(0, (size + topCurveHeight) / 1.2, size, (size + topCurveHeight) / 2, size, topCurveHeight);
+                ctx.bezierCurveTo(size, 0, 0, 0, 0, topCurveHeight);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawStarShape(ctx, cx, cy, spikes, outerRadius, innerRadius, color) {
+                let rot = Math.PI / 2 * 3;
+                let x = cx;
+                let y = cy;
+                const step = Math.PI / spikes;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(cx, cy - outerRadius);
+                for (let i = 0; i < spikes; i++) {
+                    x = cx + Math.cos(rot) * outerRadius;
+                    y = cy + Math.sin(rot) * outerRadius;
+                    ctx.lineTo(x, y);
+                    rot += step;
+
+                    x = cx + Math.cos(rot) * innerRadius;
+                    y = cy + Math.sin(rot) * innerRadius;
+                    ctx.lineTo(x, y);
+                    rot += step;
+                }
+                ctx.lineTo(cx, cy - outerRadius);
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            /**
+             * ============================================================================
+             * 10. ضبط أبعاد الشاشة وحلقة اللعبة والأحداث
+             * ============================================================================
+             */
+            function handleResize() {
+                const wrapper = document.getElementById('mem-game-wrapper');
+                if (!wrapper) return;
+                const rect = wrapper.getBoundingClientRect();
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+
+                scaleFactor = (rect.height * dpr) / LOGICAL_HEIGHT;
+                viewWidth = (rect.width * dpr) / scaleFactor;
+            }
+
+            function gameLoop() {
+                // إيقاف الحلقة تلقائياً إذا غادر المستخدم اللعبة في البوابة
+                if (!document.getElementById('mem-canvas')) {
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    return;
+                }
+
+                updatePhysics();
+                render();
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+
+            function bindEvents() {
+                window.addEventListener('resize', handleResize);
+
+                window.addEventListener('keydown', (e) => {
+                    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+                    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+                    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                        if (!keys.jumpPressed) {
+                            keys.jumpPressed = true;
+                            triggerJump();
+                        }
+                    }
+                    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyK') {
+                        triggerDash();
+                    }
+                });
+
+                window.addEventListener('keyup', (e) => {
+                    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+                    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+                    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                        keys.jumpPressed = false;
+                    }
+                });
+
+                // ربط أزرار اللمس للهواتف
+                const bindHoldBtn = (btnId, keyName) => {
+                    const btn = document.getElementById(btnId);
+                    const start = (e) => {
+                        e.preventDefault();
+                        keys[keyName] = true;
+                        btn.classList.add('pressed');
+                    };
+                    const end = (e) => {
+                        e.preventDefault();
+                        keys[keyName] = false;
+                        btn.classList.remove('pressed');
+                    };
+                    btn.addEventListener('touchstart', start, { passive: false });
+                    btn.addEventListener('touchend', end, { passive: false });
+                    btn.addEventListener('touchcancel', end, { passive: false });
+                    btn.addEventListener('mousedown', start);
+                    btn.addEventListener('mouseup', end);
+                    btn.addEventListener('mouseleave', end);
+                };
+
+                bindHoldBtn('touch-left', 'left');
+                bindHoldBtn('touch-right', 'right');
+
+                const bindTapBtn = (btnId, actionFn) => {
+                    const btn = document.getElementById(btnId);
+                    const press = (e) => {
+                        e.preventDefault();
+                        btn.classList.add('pressed');
+                        actionFn();
+                    };
+                    const release = (e) => {
+                        e.preventDefault();
+                        btn.classList.remove('pressed');
+                    };
+                    btn.addEventListener('touchstart', press, { passive: false });
+                    btn.addEventListener('touchend', release, { passive: false });
+                    btn.addEventListener('mousedown', press);
+                    btn.addEventListener('mouseup', release);
+                };
+
+                bindTapBtn('touch-jump', triggerJump);
+                bindTapBtn('touch-dash', triggerDash);
+
+                // أزرار الواجهة والنوافذ
+                document.getElementById('btn-start-game').addEventListener('click', () => {
+                    sfx.init();
+                    loadStage(1, true);
+                });
+
+                document.getElementById('btn-start-levels').addEventListener('click', () => {
+                    sfx.init();
+                    renderLevelSelectGrid();
+                    document.getElementById('level-select-modal').classList.remove('hidden');
+                });
+
+                document.getElementById('btn-open-levels').addEventListener('click', () => {
+                    renderLevelSelectGrid();
+                    document.getElementById('level-select-modal').classList.remove('hidden');
+                });
+
+                document.getElementById('btn-close-levels').addEventListener('click', () => {
+                    document.getElementById('level-select-modal').classList.add('hidden');
+                });
+
+                document.getElementById('btn-continue-memory').addEventListener('click', () => {
+                    document.getElementById('memory-modal').classList.add('hidden');
+                    gameState.mode = 'playing';
+                });
+
+                document.getElementById('btn-next-stage').addEventListener('click', () => {
+                    loadStage(gameState.currentStageId + 1, true);
+                });
+
+                document.getElementById('btn-replay-stage').addEventListener('click', () => {
+                    loadStage(gameState.currentStageId, true);
+                });
+
+                document.getElementById('btn-retry-stage').addEventListener('click', () => {
+                    loadStage(gameState.currentStageId, true);
+                });
+
+                document.getElementById('btn-restart-quick').addEventListener('click', () => {
+                    loadStage(gameState.currentStageId, true);
+                });
+
+                document.getElementById('btn-play-again').addEventListener('click', () => {
+                    loadStage(1, true);
+                });
+
+                document.getElementById('btn-victory-levels').addEventListener('click', () => {
+                    document.getElementById('victory-modal').classList.add('hidden');
+                    renderLevelSelectGrid();
+                    document.getElementById('level-select-modal').classList.remove('hidden');
+                });
+
+                document.getElementById('btn-sound-toggle').addEventListener('click', () => {
+                    sfx.muted = !sfx.muted;
+                    document.getElementById('sound-icon').textContent = sfx.muted ? '🔇' : '🔊';
+                });
+            }
+
+            // التهيئة الفورية للعبة
+            handleResize();
+            loadStage(1, false);
+            bindEvents();
+            gameLoop();
+        })();
+    </script>
+</body>
+</html>
