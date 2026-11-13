@@ -1,1 +1,937 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>التقاط فارس ❤️ | لـ مها فقط</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,700;1,700&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* تنسيقات معزولة داخل حاوية اللعبة لضمان التوافق التام مع البوابة عند التشغيل عبر fetch */
+        #catch-fares-root {
+            --pink-bg-1: #ffdde1;
+            --pink-bg-2: #ee9ca7;
+            --rose-main: #e91e63;
+            --rose-dark: #c2185b;
+            --purple-soft: #9c27b0;
+            font-family: 'Cairo', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #ffdde1 0%, #f8bbd0 50%, #e1bee7 100%);
+            min-height: 100vh;
+            min-height: 100dvh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            position: relative;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
 
+        #catch-fares-root .font-poetry {
+            font-family: 'Amiri', serif;
+        }
+
+        /* البطاقة الرئيسية البيضاء المستوحاة من تصميم لعبة جمع القلوب */
+        #catch-fares-root .main-card {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px);
+            width: 100%;
+            max-width: 480px;
+            border-radius: 28px;
+            padding: 20px;
+            box-shadow: 0 18px 45px rgba(233, 30, 99, 0.22), 0 4px 12px rgba(0, 0, 0, 0.06);
+            border: 2px solid rgba(255, 194, 209, 0.9);
+            position: relative;
+            z-index: 10;
+            transition: transform 0.25s ease;
+        }
+
+        /* منطقة اللعب التفاعلية */
+        #catch-fares-root #gameArea {
+            width: 100%;
+            height: 340px;
+            background: linear-gradient(180deg, #fff5f7 0%, #ffe4ec 100%);
+            border-radius: 22px;
+            position: relative;
+            overflow: hidden;
+            border: 2.5px dashed #f06292;
+            box-shadow: inset 0 4px 15px rgba(233, 30, 99, 0.08);
+            touch-action: manipulation;
+        }
+
+        @media (min-height: 740px) {
+            #catch-fares-root #gameArea {
+                height: 380px;
+            }
+        }
+
+        /* العناصر المتساقطة */
+        #catch-fares-root .falling-item {
+            position: absolute;
+            top: -65px;
+            transform: translateX(-50%);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-weight: 800;
+            white-space: nowrap;
+            box-shadow: 0 6px 16px rgba(233, 30, 99, 0.25);
+            transition: transform 0.1s ease;
+            z-index: 5;
+            touch-action: manipulation;
+        }
+
+        #catch-fares-root .falling-item:active {
+            transform: translateX(-50%) scale(0.88);
+        }
+
+        #catch-fares-root .item-fares {
+            background: linear-gradient(135deg, #ff4081, #e91e63);
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            font-size: 14px;
+        }
+
+        #catch-fares-root .item-scholar {
+            background: linear-gradient(135deg, #8e24aa, #5e35b1);
+            color: #ffffff;
+            border: 2px solid #f3e5f5;
+            font-size: 13px;
+        }
+
+        #catch-fares-root .item-gold {
+            background: linear-gradient(135deg, #ffd54f, #ffb300);
+            color: #5d4037;
+            border: 2px solid #ffffff;
+            font-size: 14px;
+            box-shadow: 0 0 18px rgba(255, 193, 7, 0.65);
+        }
+
+        #catch-fares-root .item-trap {
+            background: rgba(255, 255, 255, 0.92);
+            color: #4a5568;
+            border: 2px solid #cbd5e1;
+            font-size: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* تأثير النص العائم عند الالتقاط */
+        #catch-fares-root .floating-toast {
+            position: absolute;
+            pointer-events: none;
+            font-weight: 800;
+            font-size: 14px;
+            z-index: 20;
+            animation: cfFloatUp 0.85s ease-out forwards;
+            text-shadow: 0 2px 6px rgba(255, 255, 255, 0.95);
+        }
+
+        @keyframes cfFloatUp {
+            0% { opacity: 1; transform: translate(-50%, 0) scale(0.85); }
+            50% { opacity: 1; transform: translate(-50%, -24px) scale(1.08); }
+            100% { opacity: 0; transform: translate(-50%, -48px) scale(0.95); }
+        }
+
+        /* تأثير اهتزاز الصندوق عند لمس فخ */
+        @keyframes cfShake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-7px); }
+            40% { transform: translateX(7px); }
+            60% { transform: translateX(-5px); }
+            80% { transform: translateX(5px); }
+        }
+
+        #catch-fares-root .shake-box {
+            animation: cfShake 0.38s ease-in-out;
+            border-color: #ef4444 !important;
+        }
+
+        /* تأثير ظهور كرت الحب الذهبي */
+        @keyframes cfPopCard {
+            0% { opacity: 0; transform: scale(0.75) translateY(20px); }
+            70% { opacity: 1; transform: scale(1.03) translateY(-3px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        #catch-fares-root .pop-modal {
+            animation: cfPopCard 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* جزيئات القلوب والزينة */
+        #catch-fares-root .mini-particle {
+            position: absolute;
+            pointer-events: none;
+            z-index: 25;
+            font-size: 16px;
+            animation: cfBurst 0.75s ease-out forwards;
+        }
+
+        @keyframes cfBurst {
+            0% { opacity: 1; transform: translate(0, 0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.4); }
+        }
+
+        /* شريط التمرير للألبوم */
+        #catch-fares-root .album-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        #catch-fares-root .album-scroll::-webkit-scrollbar-thumb {
+            background: #f48fb1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="m-0 p-0">
+    <div id="catch-fares-root">
+        
+        <!-- خلفية قلوب ناعمة متحركة -->
+        <div id="cf-bg-hearts" class="fixed inset-0 pointer-events-none overflow-hidden opacity-35" aria-hidden="true"></div>
+
+        <!-- البطاقة الرئيسية للعبة -->
+        <main class="main-card text-center">
+            
+            <!-- الشريط العلوي: الصوت والألبوم -->
+            <div class="flex items-center justify-between gap-2 mb-3">
+                <button id="cf-album-btn" type="button" class="px-3.5 py-1.5 rounded-full bg-pink-50 hover:bg-pink-100 border border-pink-200 text-pink-700 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition shadow-sm">
+                    <span>📖</span>
+                    <span>ألبوم كروتي (<span id="cf-album-count">0</span>)</span>
+                </button>
+
+                <div class="flex items-center gap-1.5">
+                    <div class="px-3 py-1 rounded-full bg-purple-50 border border-purple-200 text-purple-700 text-xs font-bold">
+                        🏆 القياسي: <span id="cf-best-score">0</span>
+                    </div>
+                    <button id="cf-sound-btn" type="button" class="w-8 h-8 rounded-full bg-pink-50 hover:bg-pink-100 border border-pink-200 text-pink-600 flex items-center justify-center text-sm transition" title="كتم أو تشغيل الصوت">
+                        🔊
+                    </button>
+                </div>
+            </div>
+
+            <!-- العنوان والوصف -->
+            <header class="mb-3">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-pink-600 tracking-tight mb-1">
+                    💘 التقطي فارس يا مها
+                </h1>
+                <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                    اضغطي على <b class="text-pink-600">فارس</b> وألقابه قبل ما يوقعوا! كل <b class="text-purple-600">10 نقاط</b> يفتح لكِ كرت شعر ورسالة حب خاصة ❤️
+                </p>
+            </header>
+
+            <!-- لوحة العدادات وشريط التقدم نحو الكرت القادم -->
+            <div class="bg-gradient-to-r from-pink-50 via-rose-50 to-purple-50 border border-pink-200/80 rounded-2xl p-3 mb-3">
+                <div class="flex items-center justify-between text-xs sm:text-sm font-bold mb-1.5">
+                    <span class="text-pink-700">مجموع فارس: <strong id="cf-score" class="text-lg text-pink-600">0</strong></span>
+                    <span class="text-purple-700">للكرت القادم: <strong id="cf-next-milestone">0 / 10</strong></span>
+                </div>
+                <div class="w-full h-3 bg-white rounded-full overflow-hidden border border-pink-200 p-0.5">
+                    <div id="cf-progress-bar" class="h-full w-0 rounded-full bg-gradient-to-l from-pink-500 via-rose-500 to-purple-600 transition-all duration-300"></div>
+                </div>
+            </div>
+
+            <!-- منطقة اللعب التفاعلية (#gameArea) -->
+            <div id="gameArea">
+                <!-- شاشة البداية داخل منطقة اللعب -->
+                <div id="cf-start-screen" class="absolute inset-0 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center p-5 z-20">
+                    <div class="text-4xl mb-2 animate-bounce">👑❤️</div>
+                    <h2 class="text-lg font-extrabold text-pink-600 mb-1">جاهزة تلقطي قلب فارسك؟</h2>
+                    <p class="text-xs text-gray-600 mb-4 max-w-xs leading-relaxed">
+                        التقطي <b>فارس 👑</b> و<b>أبو أهل العلم 🤓</b> و<b>القلوب الذهبية (+2)</b>، وتجنبي غيوم الزعل ☁️!
+                    </p>
+                    <button id="cf-start-btn" type="button" class="px-7 py-3 rounded-full bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-extrabold text-sm sm:text-base shadow-lg shadow-pink-500/30 transition transform active:scale-95">
+                        ابدئي الالتقاط يا مها 🎮
+                    </button>
+                </div>
+
+                <!-- شريط تنبيه سريع داخل منطقة اللعب -->
+                <div id="cf-area-banner" class="hidden absolute top-2.5 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full bg-red-500/90 text-white text-xs font-bold shadow-md z-30 whitespace-nowrap">
+                    انتبهي لا تلمسي الزعل! 💔
+                </div>
+            </div>
+
+            <!-- أزرار التحكم السفلية -->
+            <div class="mt-3.5 flex items-center justify-between gap-2">
+                <button id="cf-pause-btn" type="button" class="hidden flex-1 py-2.5 rounded-2xl bg-pink-100 hover:bg-pink-200 text-pink-700 font-bold text-xs sm:text-sm transition">
+                    ⏸️ إيقاف مؤقت
+                </button>
+                <button id="cf-reset-btn" type="button" class="hidden py-2.5 px-4 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-xs sm:text-sm transition" title="بدء جولة جديدة">
+                    🔄 إعادة
+                </button>
+            </div>
+        </main>
+
+        <!-- نافذة كرت الحب الذهبي المنبثقة كل 10 نقاط -->
+        <div id="cf-love-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="pop-modal bg-gradient-to-b from-amber-50 via-white to-pink-50 w-full max-w-md rounded-3xl p-6 sm:p-7 text-center border-4 border-amber-300 shadow-2xl relative overflow-hidden">
+                <!-- شارة رقم الكرت -->
+                <div class="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-gradient-to-r from-amber-400 to-pink-500 text-white text-xs font-extrabold shadow-sm mb-3">
+                    <span>✨</span>
+                    <span id="cf-card-badge">كرت الحب الذهبي #1</span>
+                </div>
+
+                <div id="cf-card-emoji" class="text-4xl mb-2">💌</div>
+
+                <h2 id="cf-card-title" class="font-poetry text-2xl sm:text-3xl font-bold text-pink-600 mb-3">
+                    عنوان الكرت الرومانسي
+                </h2>
+
+                <!-- صندوق الشعر والرسالة -->
+                <div id="cf-card-body" class="font-poetry text-lg sm:text-xl text-gray-800 leading-loose bg-white/90 border-2 border-pink-200 rounded-2xl p-4 mb-4 shadow-inner">
+                    أبيات الشعر هنا...
+                </div>
+
+                <p id="cf-card-footer" class="text-xs font-bold text-purple-700 mb-4">
+                    - من فارسك ومجنونك إلى أميرة قلبي مها ❤️
+                </p>
+
+                <button id="cf-save-continue-btn" type="button" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-extrabold text-sm sm:text-base shadow-lg shadow-pink-500/30 transition transform active:scale-95">
+                    حفظ الكرت في ألبومي والمتابعة ❤️
+                </button>
+            </div>
+        </div>
+
+        <!-- نافذة ألبوم الكروت المفتوحة -->
+        <div id="cf-album-modal" class="hidden fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="pop-modal bg-white w-full max-w-lg rounded-3xl p-5 sm:p-6 border-2 border-pink-300 shadow-2xl max-h-[88vh] flex flex-col">
+                <div class="flex items-center justify-between pb-3 border-b border-pink-100 mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">📖</span>
+                        <h3 class="text-lg sm:text-xl font-extrabold text-pink-600">ألبوم كروت مها وفارس</h3>
+                    </div>
+                    <button id="cf-close-album-btn" type="button" class="w-8 h-8 rounded-full bg-pink-50 hover:bg-pink-100 text-pink-600 font-bold text-lg flex items-center justify-center">
+                        &times;
+                    </button>
+                </div>
+
+                <div id="cf-album-list" class="album-scroll overflow-y-auto space-y-3 flex-1 pr-1">
+                    <!-- يتم تعبئة الكروت المفتوحة هنا تلقائياً -->
+                </div>
+
+                <button id="cf-album-back-btn" type="button" class="mt-4 w-full py-2.5 rounded-2xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-sm transition">
+                    العودة للعبة 💖
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            /**
+             * ============================================================================
+             * 1. مكتبة كروت الحب والشعر الخاصة بـ مها وفارس (كل 10 نقاط يفتح كرت)
+             * ============================================================================
+             */
+            const LOVE_CARDS = [
+                {
+                    id: 1,
+                    emoji: "🌸",
+                    title: "بداية الحكاية.. وعدُنا الأول",
+                    poem: "سألتُ الشوقَ هل للحبِّ حدٌّ؟<br>فقالَ الحبُّ: في «مها» التمامُ..<br>تعرّفنا قبلَ رمضانَ بأسبوعٍ<br>فصارَ العمرُ بعدكِ لي سلامُ ❤️",
+                    note: "كرت الـ 10 نقاط • ذكرى أجمل صدفة في حياتي"
+                },
+                {
+                    id: 2,
+                    emoji: "🤓",
+                    title: "من «أبو أهل العلم والنظارات»",
+                    poem: "أنا ما بينَ أهلِ العلمِ أُمضي<br>سنيني، والمنى منكِ الوصالُ..<br>فإن ناديتِني بلقبِي تاهَ عقلي<br>وذابَ القلبُ فيكِ ولا يُبالُ 👓💜",
+                    note: "كرت الـ 20 نقطة • أحلى لقب أسمعه من شفايفك"
+                },
+                {
+                    id: 3,
+                    emoji: "🎮",
+                    title: "من «بلوم مان غو» إلى سكن الروح",
+                    poem: "بدأتِ القصةُ الأولى بلُعبة<br>فصرتِ الحلمَ والنبضَ الحقيقي..<br>يا «يروحي» ويا نبضَ الفؤادِ<br>بكِ تحلو الحياةُ على طريقي ✨",
+                    note: "كرت الـ 30 نقطة • أحلى جيم فزت فيه بحياتي هو إنتي"
+                },
+                {
+                    id: 4,
+                    emoji: "🍯",
+                    title: "أحلى من الرز بحليب يا مها",
+                    poem: "يقولونَ الحلاوةُ في طعامٍ<br>وأنتِ الحلوُ في كلِّ الزمانِ..<br>فلا أرزٌ بحليبٍ يضاهي<br>حلاوةَ ضحكتِكِ يا نورَ عيني 🌹",
+                    note: "كرت الـ 40 نقطة • إنتي تحلية عمري كله"
+                },
+                {
+                    id: 5,
+                    emoji: "👑",
+                    title: "أميرة قلبي وعرش حياتي",
+                    poem: "لقطتِ القلبَ خمسيناً وزدتِ<br>غرامي في هواكِ بلا انتهاءِ..<br>فأنتِ التاجُ فوقَ الرأسِ دوماً<br>وأنتِ البدرُ في ليلِ السماءِ 👑💖",
+                    note: "كرت الـ 50 نقطة • ملكة قلب فارس بلا منازع"
+                },
+                {
+                    id: 6,
+                    emoji: "💌",
+                    title: "عهدُ فارسٍ لا يتغيّر",
+                    poem: "وعدتُكِ أن أكونَ لكِ الأمانا<br>وسندَكِ حينَ تشتدُّ الليالي..<br>فمها في فؤادي نبضُ روحٍ<br>تعيشُ العمرَ في أعلى المعالي 💞",
+                    note: "كرت الـ 60 نقطة • وعدي إلك أبقى جنبك للأبد"
+                },
+                {
+                    id: 7,
+                    emoji: "🌙",
+                    title: "قمرُ الليالي وسرُّ السعادة",
+                    poem: "إذا أظلمتِ الدنيا بعيني<br>تذكّرتُ اسمَكِ الغالي فأُشرق..<br>كأنَّ اللهَ أودعَ فيكِ سِحراً<br>بهِ كلُّ الهمومِ غداً ستُحرق ✨",
+                    note: "كرت الـ 70 نقطة • وجودك بحياتي نعمة بشكر ربي عليها"
+                },
+                {
+                    id: 8,
+                    emoji: "💍",
+                    title: "أغلى أمنيات فارس",
+                    poem: "جمعتِ الحبَّ في قلبي مراراً<br>وما زالَ الفؤادُ بكِ مُتيَّم..<br>عسى الأيامُ تجمعُنا قريباً<br>ويبقى حبُّنا أسمى وأعظم 💍❤️",
+                    note: "كرت الـ 80 نقطة • يا رب يجمعنا على خير يا روحي"
+                }
+            ];
+
+            // جمل لطيفة تظهر عند التقاط فارس
+            const CATCH_PHRASES = [
+                "لقطتيني! ❤️",
+                "فداكي يا مها 🌹",
+                "يا عيوني إنتي ✨",
+                "أحلى صيدة 💖",
+                "يسعد قلبك 👑",
+                "يروحي يا مها 💕"
+            ];
+
+            /**
+             * ============================================================================
+             * 2. نظام الصوت المدمج عبر Web Audio API (بدون أي ملفات خارجية)
+             * ============================================================================
+             */
+            const soundEngine = {
+                ctx: null,
+                muted: false,
+                init() {
+                    if (!this.ctx) {
+                        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                        if (AudioCtx) this.ctx = new AudioCtx();
+                    }
+                    if (this.ctx && this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                },
+                playCatch(isGold = false) {
+                    if (this.muted) return;
+                    this.init();
+                    if (!this.ctx) return;
+
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = isGold ? 'triangle' : 'sine';
+
+                    const baseFreq = isGold ? 660 : 520;
+                    osc.frequency.setValueAtTime(baseFreq, now);
+                    osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.45, now + 0.16);
+
+                    gain.gain.setValueAtTime(0.14, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.18);
+                },
+                playTrap() {
+                    if (this.muted) return;
+                    this.init();
+                    if (!this.ctx) return;
+
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.25);
+
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.26);
+                },
+                playLoveCard() {
+                    if (this.muted) return;
+                    this.init();
+                    if (!this.ctx) return;
+
+                    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                    notes.forEach((freq, idx) => {
+                        const start = this.ctx.currentTime + idx * 0.1;
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, start);
+
+                        gain.gain.setValueAtTime(0.15, start);
+                        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
+
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(start);
+                        osc.stop(start + 0.36);
+                    });
+                }
+            };
+
+            /**
+             * ============================================================================
+             * 3. حالة اللعبة والمتغيرات
+             * ============================================================================
+             */
+            const state = {
+                score: 0,
+                bestScore: 0,
+                isRunning: false,
+                isPaused: false,
+                unlockedCardNumbers: [], // أرقام الكروت المفتوحة (10، 20، 30...)
+                lastMilestone: 0,
+                activeItems: [],
+                lastSpawnTime: 0,
+                lastFrameTime: 0,
+                animId: null
+            };
+
+            // محاولة قراءة الرقم القياسي المحفوظ بأمان
+            try {
+                const savedBest = localStorage.getItem('maha_catch_fares_best');
+                if (savedBest) state.bestScore = parseInt(savedBest, 10) || 0;
+            } catch (e) {}
+
+            // عناصر DOM
+            const els = {
+                gameArea: document.getElementById('gameArea'),
+                startScreen: document.getElementById('cf-start-screen'),
+                startBtn: document.getElementById('cf-start-btn'),
+                pauseBtn: document.getElementById('cf-pause-btn'),
+                resetBtn: document.getElementById('cf-reset-btn'),
+                scoreText: document.getElementById('cf-score'),
+                bestScoreText: document.getElementById('cf-best-score'),
+                nextMilestoneText: document.getElementById('cf-next-milestone'),
+                progressBar: document.getElementById('cf-progress-bar'),
+                areaBanner: document.getElementById('cf-area-banner'),
+                soundBtn: document.getElementById('cf-sound-btn'),
+                albumBtn: document.getElementById('cf-album-btn'),
+                albumCount: document.getElementById('cf-album-count'),
+                loveModal: document.getElementById('cf-love-modal'),
+                cardBadge: document.getElementById('cf-card-badge'),
+                cardEmoji: document.getElementById('cf-card-emoji'),
+                cardTitle: document.getElementById('cf-card-title'),
+                cardBody: document.getElementById('cf-card-body'),
+                cardFooter: document.getElementById('cf-card-footer'),
+                saveContinueBtn: document.getElementById('cf-save-continue-btn'),
+                albumModal: document.getElementById('cf-album-modal'),
+                albumList: document.getElementById('cf-album-list'),
+                closeAlbumBtn: document.getElementById('cf-close-album-btn'),
+                albumBackBtn: document.getElementById('cf-album-back-btn')
+            };
+
+            els.bestScoreText.textContent = state.bestScore;
+
+            /**
+             * إنشاء قلوب خلفية لطيفة تطفو ببطء
+             */
+            function initBackgroundHearts() {
+                const container = document.getElementById('cf-bg-hearts');
+                const icons = ['❤️', '💖', '🌸', '💕'];
+                for (let i = 0; i < 14; i++) {
+                    const span = document.createElement('span');
+                    span.textContent = icons[i % icons.length];
+                    span.style.position = 'absolute';
+                    span.style.left = `${Math.random() * 95}%`;
+                    span.style.top = `${Math.random() * 95}%`;
+                    span.style.fontSize = `${16 + Math.random() * 18}px`;
+                    container.appendChild(span);
+                }
+            }
+
+            /**
+             * توليد بطاقة شعر مخصصة لأي مضاعف للرقم 10 (حتى لو تجاوزت 80 نقطة!)
+             */
+            function getLoveCardForMilestone(milestonePoints) {
+                const cardIndex = Math.floor(milestonePoints / 10) - 1;
+                if (cardIndex < LOVE_CARDS.length) {
+                    return {
+                        ...LOVE_CARDS[cardIndex],
+                        milestonePoints
+                    };
+                }
+                // كروت إضافية لا نهائية إذا وصلت مها إلى 90، 100، 110...
+                const dynamicPoems = [
+                    "كلّما زادَ عدّادُكِ في لَقطِ قلبي<br>زادَ يقيني أنّكِ قدرِي الأجمل..<br>أحبّكِ يا مها بعددِ كلِّ نبضةٍ في صدري ❤️",
+                    "ما بينَ الفارسِ ومها حكايةُ عشقٍ<br>لا تنتهي عندَ رقمٍ ولا حدود..<br>دمتِ لي فرحةَ العمرِ ونورَ الوجود 👑✨",
+                    "لقطتِ قلبي مراراً وتكراراً<br>وفي كلِّ مرةٍ أقعُ في حبِّكِ من جديد..<br>يا أغلى من روحي يا أميرةَ القلب 💖"
+                ];
+                return {
+                    id: cardIndex + 1,
+                    emoji: "👑💝",
+                    title: `أسطورة الحب (${milestonePoints} فارس!)`,
+                    poem: dynamicPoems[cardIndex % dynamicPoems.length],
+                    note: `كرت الـ ${milestonePoints} نقطة • حب بلا حدود بين فارس ومها`,
+                    milestonePoints
+                };
+            }
+
+            /**
+             * تحديث العدادات وشريط التقدم
+             */
+            function updateUI() {
+                els.scoreText.textContent = state.score;
+                if (state.score > state.bestScore) {
+                    state.bestScore = state.score;
+                    els.bestScoreText.textContent = state.bestScore;
+                    try {
+                        localStorage.setItem('maha_catch_fares_best', String(state.bestScore));
+                    } catch (e) {}
+                }
+
+                // حساب التقدم نحو الـ 10 القادمة
+                const remainder = state.score % 10;
+                const progressDisplay = (state.score > 0 && remainder === 0 && state.lastMilestone === state.score) ? 10 : remainder;
+                els.nextMilestoneText.textContent = `${progressDisplay} / 10`;
+                els.progressBar.style.width = `${progressDisplay * 10}%`;
+                els.albumCount.textContent = state.unlockedCardNumbers.length;
+            }
+
+            /**
+             * إنشاء عنصر متساقط جديد (فارس، لقب، قلب ذهبي، أو فخ زعل)
+             */
+            function spawnItem() {
+                const areaWidth = els.gameArea.clientWidth || 340;
+                const x = 48 + Math.random() * (areaWidth - 96);
+
+                // تحديد نوع العنصر باحتمالات متوازنة وممتعة
+                const roll = Math.random();
+                let itemConfig;
+
+                if (roll < 0.42) {
+                    itemConfig = { text: "فارس 👑", points: 1, cssClass: "item-fares", isTrap: false, isGold: false };
+                } else if (roll < 0.66) {
+                    itemConfig = { text: "أبو أهل العلم 🤓", points: 1, cssClass: "item-scholar", isTrap: false, isGold: false };
+                } else if (roll < 0.78) {
+                    itemConfig = { text: "يروحي ❤️", points: 1, cssClass: "item-fares", isTrap: false, isGold: false };
+                } else if (roll < 0.87) {
+                    itemConfig = { text: "فارس ذهبي +2 ✨", points: 2, cssClass: "item-gold", isTrap: false, isGold: true };
+                } else if (roll < 0.94) {
+                    itemConfig = { text: "غيمة زعل ☁️", points: -1, cssClass: "item-trap", isTrap: true, isGold: false };
+                } else {
+                    itemConfig = { text: "زعل 💔", points: -1, cssClass: "item-trap", isTrap: true, isGold: false };
+                }
+
+                const el = document.createElement('div');
+                el.className = `falling-item ${itemConfig.cssClass}`;
+                el.textContent = itemConfig.text;
+                el.style.left = `${x}px`;
+
+                // حساب سرعة السقوط التصاعدية لزيادة الحماس مع التقدم
+                const difficultyBoost = Math.min(state.score * 2.4, 210);
+                const speed = (135 + Math.random() * 55) + difficultyBoost; // بكسل في الثانية
+
+                const itemObj = {
+                    el,
+                    x,
+                    y: -50,
+                    speed,
+                    config: itemConfig,
+                    caught: false
+                };
+
+                // الاستجابة الفورية للمس والنقر
+                const handleCatch = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!state.isRunning || state.isPaused || itemObj.caught) return;
+                    itemObj.caught = true;
+                    onItemClicked(itemObj);
+                };
+
+                el.addEventListener('pointerdown', handleCatch);
+                els.gameArea.appendChild(el);
+                state.activeItems.push(itemObj);
+            }
+
+            /**
+             * معالجة النقر على عنصر متساقط
+             */
+            function onItemClicked(itemObj) {
+                const { x, y, config, el } = itemObj;
+                el.remove();
+                state.activeItems = state.activeItems.filter(i => i !== itemObj);
+
+                if (config.isTrap) {
+                    // لمس غيمة زعل أو قلب مكسور
+                    soundEngine.playTrap();
+                    state.score = Math.max(0, state.score - 1);
+                    updateUI();
+
+                    els.gameArea.classList.remove('shake-box');
+                    void els.gameArea.offsetWidth; // إعادة تفعيل الأنيميشن
+                    els.gameArea.classList.add('shake-box');
+
+                    showFloatingToast(x, y, "انتبهي! لا تلمسي الزعل 💔", "#dc2626");
+                    showAreaWarning("انتبهي لا تلمسي الزعل! (-1)");
+                    return;
+                }
+
+                // التقاط فارس بنجاح!
+                soundEngine.playCatch(config.isGold);
+                const prevScore = state.score;
+                state.score += config.points;
+
+                const phrase = config.isGold
+                    ? "+2 فارس ذهبي! ✨"
+                    : CATCH_PHRASES[Math.floor(Math.random() * CATCH_PHRASES.length)];
+
+                showFloatingToast(x, y, phrase, config.isGold ? "#d97706" : "#db2777");
+                spawnBurstParticles(x, y, config.isGold ? ['✨', '💛', '👑'] : ['❤️', '💖', '🌸']);
+                updateUI();
+
+                // التحقق هل وصلنا لمضاعف جديد للرقم 10 (10، 20، 30...)
+                const prevTen = Math.floor(prevScore / 10);
+                const currentTen = Math.floor(state.score / 10);
+
+                if (currentTen > prevTen && state.score >= 10) {
+                    const milestone = currentTen * 10;
+                    if (milestone > state.lastMilestone) {
+                        state.lastMilestone = milestone;
+                        triggerLoveCardPopup(milestone);
+                    }
+                }
+            }
+
+            /**
+             * إظهار نص لطيف يطفو مكان الالتقاط
+             */
+            function showFloatingToast(x, y, text, color) {
+                const toast = document.createElement('div');
+                toast.className = 'floating-toast';
+                toast.textContent = text;
+                toast.style.left = `${x}px`;
+                toast.style.top = `${Math.max(25, y)}px`;
+                toast.style.color = color;
+                els.gameArea.appendChild(toast);
+                setTimeout(() => toast.remove(), 860);
+            }
+
+            /**
+             * انفجار قلوب صغيرة مكان الالتقاط
+             */
+            function spawnBurstParticles(x, y, emojis) {
+                for (let i = 0; i < 6; i++) {
+                    const p = document.createElement('span');
+                    p.className = 'mini-particle';
+                    p.textContent = emojis[i % emojis.length];
+                    p.style.left = `${x}px`;
+                    p.style.top = `${y}px`;
+                    const angle = (Math.PI * 2 * i) / 6;
+                    const dist = 35 + Math.random() * 25;
+                    p.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+                    p.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+                    els.gameArea.appendChild(p);
+                    setTimeout(() => p.remove(), 760);
+                }
+            }
+
+            let warningTimeout = null;
+            function showAreaWarning(msg) {
+                els.areaBanner.textContent = msg;
+                els.areaBanner.classList.remove('hidden');
+                clearTimeout(warningTimeout);
+                warningTimeout = setTimeout(() => {
+                    els.areaBanner.classList.add('hidden');
+                }, 1300);
+            }
+
+            /**
+             * إيقاف اللعبة مؤقتاً وإظهار كرت الحب الذهبي كل 10 نقاط
+             */
+            function triggerLoveCardPopup(milestonePoints) {
+                state.isPaused = true;
+                soundEngine.playLoveCard();
+
+                const cardData = getLoveCardForMilestone(milestonePoints);
+                if (!state.unlockedCardNumbers.includes(milestonePoints)) {
+                    state.unlockedCardNumbers.push(milestonePoints);
+                    updateUI();
+                }
+
+                els.cardBadge.textContent = `كرت الحب الذهبي #${cardData.id} (${milestonePoints} نقطة)`;
+                els.cardEmoji.textContent = cardData.emoji;
+                els.cardTitle.textContent = cardData.title;
+                els.cardBody.innerHTML = cardData.poem;
+                els.cardFooter.textContent = cardData.note;
+
+                els.loveModal.classList.remove('hidden');
+
+                // إطلاق قلوب احتفالية فوق النافذة
+                const areaW = els.gameArea.clientWidth || 320;
+                spawnBurstParticles(areaW * 0.3, 140, ['💖', '✨', '👑']);
+                spawnBurstParticles(areaW * 0.7, 140, ['❤️', '🌹', '💛']);
+            }
+
+            /**
+             * عرض ألبوم الكروت المفتوحة
+             */
+            function renderAlbumModal() {
+                els.albumList.innerHTML = '';
+
+                if (state.unlockedCardNumbers.length === 0) {
+                    els.albumList.innerHTML = `
+                        <div class="text-center py-10 px-4 bg-pink-50/70 rounded-2xl border border-dashed border-pink-200">
+                            <div class="text-4xl mb-2">🔒💌</div>
+                            <p class="text-sm font-bold text-pink-700 mb-1">الألبوم بانتظار أول 10 نقاط!</p>
+                            <p class="text-xs text-gray-500">التقطي 10 من فارس ليُفتح أول كرت شعر رومانسي ويُحفظ هنا.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                state.unlockedCardNumbers.forEach((pts) => {
+                    const card = getLoveCardForMilestone(pts);
+                    const div = document.createElement('div');
+                    div.className = 'p-4 rounded-2xl bg-gradient-to-br from-pink-50 via-white to-amber-50 border border-pink-200 shadow-xs text-right';
+                    div.innerHTML = `
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-pink-600 text-white">كرت #${card.id} (${pts} نقطة)</span>
+                            <span class="text-xl">${card.emoji}</span>
+                        </div>
+                        <h4 class="font-poetry text-xl font-bold text-pink-700 mb-1">${card.title}</h4>
+                        <p class="font-poetry text-base text-gray-800 leading-relaxed mb-2">${card.poem}</p>
+                        <div class="text-[11px] font-semibold text-purple-600">${card.note}</div>
+                    `;
+                    els.albumList.appendChild(div);
+                });
+            }
+
+            /**
+             * حلقة التحديث الرئيسية للرسوميات والسقوط
+             */
+            function gameLoop(timestamp) {
+                // إيقاف الحلقة تلقائياً إذا غادر المستخدم اللعبة في البوابة
+                if (!document.getElementById('catch-fares-root')) {
+                    if (state.animId) cancelAnimationFrame(state.animId);
+                    return;
+                }
+
+                if (!state.lastFrameTime) state.lastFrameTime = timestamp;
+                const dt = Math.min((timestamp - state.lastFrameTime) / 1000, 0.08);
+                state.lastFrameTime = timestamp;
+
+                if (state.isRunning && !state.isPaused) {
+                    // وتيرة توليد العناصر تزداد سرعة مع تقدم مها
+                    const spawnInterval = Math.max(460, 880 - state.score * 6);
+                    if (timestamp - state.lastSpawnTime > spawnInterval) {
+                        spawnItem();
+                        state.lastSpawnTime = timestamp;
+                    }
+
+                    const areaHeight = els.gameArea.clientHeight || 340;
+
+                    for (let i = state.activeItems.length - 1; i >= 0; i--) {
+                        const item = state.activeItems[i];
+                        item.y += item.speed * dt;
+                        item.el.style.top = `${item.y}px`;
+
+                        // إذا وصل العنصر لأسفل الصندوق دون أن تلتقطه مها
+                        if (item.y > areaHeight + 10) {
+                            item.el.remove();
+                            state.activeItems.splice(i, 1);
+
+                            // إذا كان العنصر الساقط هو "فارس" وليس فخاً، ينقص العداد نقطة واحدة كما في فكرة اللعبة الأصلية
+                            if (!item.config.isTrap && state.score > 0) {
+                                state.score = Math.max(0, state.score - 1);
+                                updateUI();
+                                showFloatingToast(item.x, areaHeight - 28, "وقع فارس! -1 😢", "#e11d48");
+                            }
+                        }
+                    }
+                }
+
+                state.animId = requestAnimationFrame(gameLoop);
+            }
+
+            /**
+             * بدء أو إعادة تشغيل الجولة
+             */
+            function startNewGame() {
+                soundEngine.init();
+                clearActiveItems();
+                state.score = 0;
+                state.lastMilestone = 0;
+                state.isRunning = true;
+                state.isPaused = false;
+                state.lastSpawnTime = performance.now();
+                state.lastFrameTime = performance.now();
+
+                els.startScreen.classList.add('hidden');
+                els.pauseBtn.classList.remove('hidden');
+                els.resetBtn.classList.remove('hidden');
+                els.pauseBtn.textContent = '⏸️ إيقاف مؤقت';
+
+                updateUI();
+                spawnItem();
+            }
+
+            function clearActiveItems() {
+                state.activeItems.forEach(item => item.el.remove());
+                state.activeItems = [];
+            }
+
+            // ربط أحداث الأزرار
+            els.startBtn.addEventListener('click', startNewGame);
+            els.resetBtn.addEventListener('click', startNewGame);
+
+            els.pauseBtn.addEventListener('click', () => {
+                if (!state.isRunning) return;
+                state.isPaused = !state.isPaused;
+                els.pauseBtn.textContent = state.isPaused ? '▶️ متابعة اللعب' : '⏸️ إيقاف مؤقت';
+                if (!state.isPaused) {
+                    state.lastFrameTime = performance.now();
+                }
+            });
+
+            els.saveContinueBtn.addEventListener('click', () => {
+                els.loveModal.classList.add('hidden');
+                state.isPaused = false;
+                state.lastFrameTime = performance.now();
+            });
+
+            let wasPausedBeforeAlbum = false;
+            els.albumBtn.addEventListener('click', () => {
+                wasPausedBeforeAlbum = state.isPaused;
+                state.isPaused = true;
+                renderAlbumModal();
+                els.albumModal.classList.remove('hidden');
+            });
+
+            const closeAlbum = () => {
+                els.albumModal.classList.add('hidden');
+                if (state.isRunning && els.loveModal.classList.contains('hidden')) {
+                    state.isPaused = wasPausedBeforeAlbum;
+                    state.lastFrameTime = performance.now();
+                }
+            };
+
+            els.closeAlbumBtn.addEventListener('click', closeAlbum);
+            els.albumBackBtn.addEventListener('click', closeAlbum);
+
+            els.soundBtn.addEventListener('click', () => {
+                soundEngine.muted = !soundEngine.muted;
+                els.soundBtn.textContent = soundEngine.muted ? '🔇' : '🔊';
+            });
+
+            // تهيئة الخلفية وبدء حلقة الإطارات
+            initBackgroundHearts();
+            updateUI();
+            state.animId = requestAnimationFrame(gameLoop);
+        })();
+    </script>
+</body>
+</html>
