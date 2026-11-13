@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>مطاردة الحب | فارس ومها ❤️🏃</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    html, body {
+        margin: 0; padding: 0;
+        width: 100%; height: 100%;
+        overflow: hidden;
+        background: #090514;
+        font-family: 'Cairo', sans-serif;
+        touch-action: none;
+    }
+    #game-wrap {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+        background: #090514;
+    }
+    #game-canvas { display: block; width: 100%; height: 100%; }
+
+    .glass {
+        background: rgba(18, 9, 38, 0.82);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(236, 72, 153, 0.4);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+    }
+    .touch-btn {
+        background: rgba(36, 18, 71, 0.68);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 2px solid rgba(236, 72, 153, 0.5);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+        transition: transform 0.08s ease, background 0.08s ease;
+    }
+    .touch-btn:active, .touch-btn.pressed {
+        transform: scale(0.9);
+        background: rgba(236, 72, 153, 0.65);
+        border-color: #f472b6;
+    }
+    @keyframes glowPulse {
+        0%, 100% { box-shadow: 0 0 24px rgba(236, 72, 153, 0.4); }
+        50% { box-shadow: 0 0 42px rgba(236, 72, 153, 0.8); }
+    }
+    .glow-pulse { animation: glowPulse 2.6s infinite ease-in-out; }
+
+    @keyframes floatHeart {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-12px) scale(1.08); }
+    }
+    .float-heart { animation: floatHeart 2s infinite ease-in-out; }
+
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb {
+        background: rgba(236, 72, 153, 0.55);
+        border-radius: 10px;
+    }
+
+    #rotate-warning {
+        position: fixed; inset: 0; z-index: 9999;
+        background: #090514;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+    }
+    #rotate-warning.show { display: flex; }
+    #rotate-warning .ico {
+        font-size: 76px; margin-bottom: 18px;
+        animation: rotatePhone 2s infinite ease-in-out;
+    }
+    @keyframes rotatePhone {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(90deg); }
+    }
+    @media (orientation: landscape) { #rotate-warning { display: none !important; } }
+    @media (min-width: 900px) { #rotate-warning { display: none !important; } }
+</style>
+</head>
+<body>
+
+<div id="game-wrap">
+    <canvas id="game-canvas"></canvas>
+
+    <!-- HUD -->
+    <header id="hud" class="fixed top-3 left-3 right-3 sm:top-4 sm:left-6 sm:right-6 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        <div class="flex flex-wrap items-center gap-2 pointer-events-auto">
+            <div class="glass px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl flex items-center gap-2 text-xs sm:text-sm font-bold text-pink-200">
+                <span id="hud-stage-icon">🌸</span>
+                <span id="hud-stage-name">المرحلة 1</span>
+            </div>
+            <div class="glass px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl flex items-center gap-1 text-sm">
+                <span>💖</span>
+                <span id="hud-hearts" class="text-pink-300 font-bold">0</span>
+            </div>
+            <div class="glass px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl flex items-center gap-1.5 text-xs sm:text-sm font-bold text-amber-300">
+                <span>🎯</span>
+                <span id="hud-distance">0 م</span>
+            </div>
+            <div class="glass px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl flex items-center gap-1.5 text-xs sm:text-sm font-bold text-purple-200">
+                <span>👤</span>
+                <span id="hud-role">فارس</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+            <button id="btn-restart" class="glass w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-purple-300 hover:text-white transition" title="إعادة">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </button>
+            <button id="btn-sound" class="glass w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-pink-300 hover:text-white transition" title="الصوت">
+                <span id="sound-icon" class="text-base sm:text-lg">🔊</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- شاشة البداية -->
+    <div id="start-overlay" class="fixed inset-0 z-30 bg-[#090514]/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="glass glow-pulse rounded-3xl max-w-xl w-full p-6 sm:p-9 text-center border-pink-500/55 max-h-[94vh] overflow-y-auto custom-scroll">
+            <div class="w-20 h-20 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-pink-500 via-rose-500 to-purple-700 p-[2px] shadow-lg shadow-pink-500/30 float-heart">
+                <div class="w-full h-full bg-[#140b29] rounded-3xl flex items-center justify-center text-4xl">
+                    ❤️🏃
+                </div>
+            </div>
+            <h1 class="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-pink-300 via-rose-200 to-purple-300 bg-clip-text text-transparent mb-2.5" style="font-family: 'Amiri', serif;">
+                مطاردة الحب
+            </h1>
+            <p class="text-sm sm:text-base text-purple-200/90 leading-relaxed mb-5">
+                يا <span class="text-pink-400 font-bold">فارس</span> ويا <span class="text-pink-400 font-bold">مها</span>،
+                الحب هذا مو سهل أبداً! 😅
+                يهرب منكما فوق المنصات والجسور، ويخبئ القلوب والنجوم!
+                <br>
+                <span class="text-amber-300 font-bold">اختارا من تتحكمون به — والآخر يمشي معاكم تلقائياً!</span>
+            </p>
+
+            <div class="mb-4">
+                <p class="text-xs sm:text-sm text-purple-300 font-bold mb-2.5">👇 اختارا الشخصية التي تتحكمون بها:</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button id="pick-fares" class="group text-right p-4 rounded-2xl border-2 border-sky-500/55 bg-gradient-to-br from-sky-900/60 to-blue-950/60 hover:border-sky-400 hover:scale-[1.02] transition">
+                        <div class="text-3xl mb-1.5">👑🏃‍♂️</div>
+                        <div class="font-extrabold text-sky-200 text-base mb-1">تحكم بفارس</div>
+                        <div class="text-[11px] text-sky-100/75 leading-snug">أنت فارس — ومها تمشي بجانبك تلقائياً</div>
+                    </button>
+                    <button id="pick-maha" class="group text-right p-4 rounded-2xl border-2 border-pink-500/55 bg-gradient-to-br from-pink-900/60 to-rose-950/60 hover:border-pink-400 hover:scale-[1.02] transition">
+                        <div class="text-3xl mb-1.5">👸🏃‍♀️</div>
+                        <div class="font-extrabold text-pink-200 text-base mb-1">تحكم بمها</div>
+                        <div class="text-[11px] text-pink-100/75 leading-snug">أنت مها — وفارس يمشي بجانبك تلقائياً</div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 text-[11px] text-purple-200/85 mb-4 bg-black/35 p-3 rounded-2xl border border-white/10">
+                <div class="flex flex-col items-center gap-1">
+                    <span class="px-2.5 py-1 rounded-lg bg-white/10 font-bold text-pink-300">◀ ▶</span>
+                    <span>تحرك</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <span class="px-2.5 py-1 rounded-lg bg-white/10 font-bold text-pink-300">قفز ×2</span>
+                    <span>قفز مزدوج</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <span class="px-2.5 py-1 rounded-lg bg-white/10 font-bold text-amber-300">⚡ Shift</span>
+                    <span>اندفاع سريع</span>
+                </div>
+            </div>
+
+            <p class="text-[11px] text-purple-300/80 bg-pink-500/10 border border-pink-500/25 rounded-xl p-2.5">
+                💡 <b>الحب يهرب منكما معاً:</b> إذا وقفتما يتوقف هو أيضاً، وإذا اقتربتما منه يسرع بالهروب!
+            </p>
+        </div>
+    </div>
+
+    <!-- نافذة الإمساك (المراحل 1 و 2) -->
+    <div id="caught-modal" class="hidden fixed inset-0 z-40 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="glass glow-pulse rounded-3xl max-w-lg w-full p-6 sm:p-8 text-center border-pink-400/70 max-h-[94vh] overflow-y-auto custom-scroll">
+            <div class="text-6xl mb-3">💘</div>
+            <h2 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-pink-300 via-amber-200 to-purple-300 bg-clip-text text-transparent mb-3" style="font-family: 'Amiri', serif;">
+                أمسكتما الحب! 🎉
+            </h2>
+            <p id="caught-text" class="text-sm sm:text-base text-purple-100/95 leading-relaxed bg-black/40 p-4 rounded-2xl border border-pink-500/30 mb-5"></p>
+
+            <div class="grid grid-cols-3 gap-2 mb-5">
+                <div class="p-2.5 rounded-2xl bg-white/5 border border-white/10">
+                    <div class="text-lg mb-0.5">💖</div>
+                    <div class="text-base font-extrabold text-pink-300" id="caught-hearts">0</div>
+                    <div class="text-[10px] text-purple-300">قلوب</div>
+                </div>
+                <div class="p-2.5 rounded-2xl bg-white/5 border border-white/10">
+                    <div class="text-lg mb-0.5">🎯</div>
+                    <div class="text-base font-extrabold text-amber-300" id="caught-distance">0</div>
+                    <div class="text-[10px] text-purple-300">مسافة</div>
+                </div>
+                <div class="p-2.5 rounded-2xl bg-white/5 border border-white/10">
+                    <div class="text-lg mb-0.5">⭐</div>
+                    <div class="text-base font-extrabold text-purple-300" id="caught-stars">0</div>
+                    <div class="text-[10px] text-purple-300">نجوم</div>
+                </div>
+            </div>
+
+            <button id="btn-next-stage" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-extrabold text-base shadow-xl shadow-pink-500/30 transition mb-2.5">
+                المرحلة التالية ⬅️
+            </button>
+            <button id="btn-replay-stage" class="w-full py-2.5 rounded-2xl bg-white/10 hover:bg-white/15 text-purple-200 text-sm font-semibold transition">
+                إعادة المرحلة 🔄
+            </button>
+        </div>
+    </div>
+
+    <!-- شاشة النهاية الكبرى -->
+    <div id="final-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="glass glow-pulse rounded-3xl max-w-xl w-full p-6 sm:p-9 text-center border-pink-400/70 max-h-[94vh] overflow-y-auto custom-scroll">
+            <div class="text-6xl sm:text-7xl mb-3 float-heart">💖🏠✨</div>
+            <h2 class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-pink-300 via-amber-200 to-purple-300 bg-clip-text text-transparent mb-3" style="font-family: 'Amiri', serif;">
+                نهاية المطاردة ❤️
+            </h2>
+
+            <div class="bg-gradient-to-br from-pink-500/15 to-purple-500/15 border-2 border-pink-500/40 rounded-3xl p-5 sm:p-6 mb-5">
+                <div class="text-5xl mb-3">❤️💬</div>
+                <p class="text-base sm:text-lg font-bold text-pink-200 leading-loose" style="font-family: 'Amiri', serif;">
+                    "خلصتوا المطاردة؟ 😂<br>
+                    <span class="text-amber-300 text-xl sm:text-2xl block mt-2">ادخلوا بيتكم!</span>
+                    <span class="text-purple-200 block mt-3 text-sm sm:text-base">
+                        أنتم حب أصلاً بدون مطاردة.. ليه تطاردوني؟ 💕
+                    </span>
+                </p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2.5 mb-5">
+                <div class="p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <div class="text-lg mb-0.5">🌍</div>
+                    <div class="text-base sm:text-lg font-extrabold text-pink-300">3 / 3</div>
+                    <div class="text-[10px] text-purple-300">المراحل</div>
+                </div>
+                <div class="p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <div class="text-lg mb-0.5">💖</div>
+                    <div class="text-base sm:text-lg font-extrabold text-pink-300" id="final-hearts">0</div>
+                    <div class="text-[10px] text-purple-300">القلوب</div>
+                </div>
+                <div class="p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <div class="text-lg mb-0.5">⭐</div>
+                    <div class="text-base sm:text-lg font-extrabold text-purple-300" id="final-stars">0</div>
+                    <div class="text-[10px] text-purple-300">النجوم</div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button id="btn-final-again" class="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-base shadow-xl shadow-pink-500/30 transition">
+                    من البداية 🔄
+                </button>
+                <button id="btn-final-switch" class="flex-1 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-purple-200 font-bold text-sm border border-white/15 transition">
+                    تبديل الشخصية 🔁
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- أزرار اللمس -->
+    <div id="touch-controls" class="fixed bottom-3 left-3 right-3 sm:bottom-6 sm:left-8 sm:right-8 z-20 flex items-end justify-between pointer-events-none">
+        <div class="flex items-center gap-3 sm:gap-4 pointer-events-auto" dir="ltr">
+            <button id="touch-left" class="touch-btn rounded-full flex items-center justify-center text-white" style="width:62px;height:62px;" aria-label="يسار">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button id="touch-right" class="touch-btn rounded-full flex items-center justify-center text-white" style="width:62px;height:62px;" aria-label="يمين">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+            </button>
+        </div>
+        <div class="flex items-center gap-3 sm:gap-4 pointer-events-auto">
+            <button id="touch-dash" class="touch-btn rounded-full flex flex-col items-center justify-center text-amber-200 font-bold bg-amber-500/20 border-amber-400/60" style="width:62px;height:62px;" aria-label="اندفاع">
+                <span class="text-lg leading-none">⚡</span>
+                <span class="text-[10px] mt-0.5">اندفاع</span>
+            </button>
+            <button id="touch-jump" class="touch-btn rounded-full flex flex-col items-center justify-center text-pink-200 font-bold bg-pink-600/30 border-pink-400/65" style="width:74px;height:74px;" aria-label="قفز">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
+                <span class="text-[11px]">قفز</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="rotate-warning">
+    <div class="ico">📱</div>
+    <h3 class="text-2xl font-bold text-pink-300 mb-2" style="font-family:'Amiri',serif;">لفّي جوالك أفقياً</h3>
+    <p class="text-purple-200 text-sm max-w-xs leading-relaxed">اللعبة مصممة للوضع الأفقي 💖</p>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    /* ═══════════════════════════════════════════════
+       الصوت
+       ═══════════════════════════════════════════════ */
+    class SoundFX {
+        constructor() { this.ctx = null; this.muted = false; }
+        init() {
+            if (!this.ctx) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) this.ctx = new AC();
+            }
+            if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+        }
+        tone(freq, type, dur, vol = 0.12, slideTo = null) {
+            if (this.muted) return;
+            this.init(); if (!this.ctx) return;
+            const now = this.ctx.currentTime;
+            const o = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            o.type = type;
+            o.frequency.setValueAtTime(freq, now);
+            if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, now + dur);
+            g.gain.setValueAtTime(vol, now);
+            g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+            o.connect(g); g.connect(this.ctx.destination);
+            o.start(now); o.stop(now + dur);
+        }
+        jump() { this.tone(320, 'sine', 0.2, 0.13, 660); }
+        doubleJump() { this.tone(500, 'triangle', 0.22, 0.13, 940); }
+        dash() { this.tone(720, 'sawtooth', 0.16, 0.09, 220); }
+        heart() { this.tone(660, 'sine', 0.14, 0.12); setTimeout(() => this.tone(990, 'sine', 0.18, 0.12), 60); }
+        star() {
+            this.tone(659, 'triangle', 0.1, 0.12);
+            setTimeout(() => this.tone(880, 'triangle', 0.1, 0.12), 60);
+            setTimeout(() => this.tone(1175, 'triangle', 0.25, 0.14), 120);
+        }
+        bump() { this.tone(180, 'square', 0.16, 0.1, 80); }
+        loveRun() { this.tone(400, 'sine', 0.12, 0.06, 280); }
+        catchLove() {
+            [523, 659, 784, 1047, 1319].forEach((n, i) =>
+                setTimeout(() => this.tone(n, 'triangle', 0.32, 0.15), i * 100));
+        }
+        finale() {
+            [523, 659, 784, 1047, 784, 1047, 1319, 1568].forEach((n, i) =>
+                setTimeout(() => this.tone(n, 'triangle', 0.36, 0.16), i * 115));
+        }
+    }
+    const sfx = new SoundFX();
+
+    /* ═══════════════════════════════════════════════
+       المراحل
+       ═══════════════════════════════════════════════ */
+    const STAGES = [
+        {
+            id: 1, name: "حديقة البدايات", icon: "🌸",
+            skyTop: "#130829", skyMid: "#2a1355", skyBot: "#4a1550",
+            groundColor: "#240d3d", grassColor: "#ec4899",
+            levelLength: 4200,
+            loveQuote: "أول ما التقينا.. عرف قلبي أنك أنت الحب! 💘"
+        },
+        {
+            id: 2, name: "جسر النجوم", icon: "🌠",
+            skyTop: "#070b24", skyMid: "#132354", skyBot: "#2b195c",
+            groundColor: "#111b42", grassColor: "#38bdf8",
+            levelLength: 4800,
+            loveQuote: "تحت النجوم.. قلوبنا أقرب من أي مطاردة! ⭐"
+        },
+        {
+            id: 3, name: "قصر اللقاء", icon: "🏰",
+            skyTop: "#090418", skyMid: "#220c42", skyBot: "#4a154b",
+            groundColor: "#1b0933", grassColor: "#fbbf24",
+            levelLength: 5400,
+            loveQuote: "وصلنا النهاية.. وهنا الحب يقول كلمته! 💬"
+        }
+    ];
+
+    /* ═══════════════════════════════════════════════
+       ثوابت
+       ═══════════════════════════════════════════════ */
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+
+    const LOGICAL_H = 640;
+    const GROUND_Y = LOGICAL_H - 100;
+    const GRAVITY = 1580;
+    const MOVE_SPEED = 340;
+    const JUMP_FORCE = -620;
+    const DJUMP_FORCE = -560;
+    const DASH_SPEED = 720;
+    const DASH_DUR = 0.2;
+    const DASH_CD = 1.3;
+
+    // مسافة الحب عن اللاعبين
+    const LOVE_AHEAD_MIN = 160;      // الحد الأدنى للمسافة أمامهم
+    const LOVE_AHEAD_MAX = 420;      // الحد الأقصى للمسافة أمامهم
+    const LOVE_BASE_SPEED = 260;     // سرعة الحب الأساسية
+    const LOVE_MAX_SPEED = 520;      // أقصى سرعة هروب
+    const LOVE_STOP_THRESHOLD = 14;  // إذا كان اللاعب متوقفاً، يتوقف الحب
+
+    let scaleF = 1;
+    let viewW = 1000;
+    let animId = null;
+
+    const keys = { left: false, right: false, jump: false };
+
+    const G = {
+        stageIdx: 0,
+        status: 'menu',
+        chaserRole: 'fares',
+        camX: 0,
+        heartsCollected: 0,
+        starsCollected: 0,
+        time: 0,
+        platforms: [],
+        springs: [],
+        obstacles: [],
+        collectibles: [],
+        particles: [],
+        bgStars: [],
+        player: null,       // الشخصية التي يتحكم بها اللاعب
+        partner: null,      // الشخصية التلقائية
+        love: null,
+        toastTimer: null
+    };
+
+    /* ═══════════════════════════════════════════════
+       الواجهة
+       ═══════════════════════════════════════════════ */
+    const $ = (id) => document.getElementById(id);
+    const stageNameEl = $('hud-stage-name');
+    const stageIconEl = $('hud-stage-icon');
+    const heartsEl = $('hud-hearts');
+    const distEl = $('hud-distance');
+    const roleEl = $('hud-role');
+    const startOverlay = $('start-overlay');
+    const caughtModal = $('caught-modal');
+    const finalModal = $('final-modal');
+
+    /* ═══════════════════════════════════════════════
+       إنشاء شخصية
+       ═══════════════════════════════════════════════ */
+    function createChar(id, name, x, y) {
+        return {
+            id, name, x, y,
+            w: 36, h: 50,
+            vx: 0, vy: 0,
+            facing: 1,
+            grounded: false,
+            jumpsLeft: 2,
+            dashTimer: 0,
+            dashCd: 0,
+            walkCycle: 0,
+            trail: [],
+            isPlayer: false
+        };
+    }
+
+    /* ═══════════════════════════════════════════════
+       بناء المرحلة
+       ═══════════════════════════════════════════════ */
+    function buildStage(stageIdx) {
+        const cfg = STAGES[stageIdx];
+        const len = cfg.levelLength;
+
+        G.platforms = [];
+        G.springs = [];
+        G.obstacles = [];
+        G.collectibles = [];
+        G.particles = [];
+        G.heartsCollected = 0;
+        G.starsCollected = 0;
+        G.camX = 0;
+        G.time = 0;
+
+        // بناء الأرضيات والفجوات
+        let x = -100;
+        let seg = 0;
+        while (x < len + 600) {
+            const w = seg === 0 ? 720 : (400 + (seg % 3) * 140);
+            G.platforms.push({ x, y: GROUND_Y, w, h: 140, type: 'ground' });
+
+            if (seg > 0 && w > 430 && x < len - 400) {
+                G.obstacles.push({
+                    x: x + w * 0.55,
+                    y: GROUND_Y - 30, w: 34, h: 30,
+                    type: stageIdx === 2 ? 'crystal' : 'cloud'
+                });
+            }
+
+            if (seg % 2 === 1 && x + w < len - 300) {
+                G.springs.push({
+                    x: x + w - 55, y: GROUND_Y - 16,
+                    w: 36, h: 16, bounceAnim: 0
+                });
+            }
+
+            x += w;
+            const gap = x < len - 250 ? (110 + (seg % 2) * 40) : 0;
+            x += gap;
+            seg++;
+        }
+
+        // منصات عائمة/متحركة + قلوب ونجوم
+        for (let px = 360; px < len - 250; px += 320) {
+            const tier = Math.floor(px / 320) % 2 === 0 ? 115 : 200;
+            const isMoving = stageIdx >= 1 && Math.floor(px / 320) % 3 === 1;
+            const pw = 135;
+            const py = GROUND_Y - tier;
+
+            G.platforms.push({
+                x: px, y: py, w: pw, h: 18,
+                type: isMoving ? 'moving' : 'floating',
+                baseX: px, range: isMoving ? 70 : 0,
+                phase: px * 0.01, dx: 0
+            });
+
+            G.collectibles.push({
+                x: px + pw * 0.3, y: py - 28, r: 12,
+                type: 'heart', collected: false, bob: px * 0.02
+            });
+            G.collectibles.push({
+                x: px + pw * 0.7, y: py - 28, r: 14,
+                type: 'star', collected: false, bob: px * 0.02 + 1
+            });
+        }
+
+        // الشخصيات
+        const startX = 140;
+        const partnerX = startX + 60;
+
+        if (G.chaserRole === 'fares') {
+            G.player = createChar('fares', 'فارس', startX, GROUND_Y - 60);
+            G.partner = createChar('maha', 'مها', partnerX, GROUND_Y - 60);
+        } else {
+            G.player = createChar('maha', 'مها', startX, GROUND_Y - 60);
+            G.partner = createChar('fares', 'فارس', partnerX, GROUND_Y - 60);
+        }
+        G.player.isPlayer = true;
+        G.partner.isPlayer = false;
+
+        // الحب — يبدأ أمامهم على مسافة معقولة
+        const loveX = startX + LOVE_AHEAD_MIN + 80;
+        G.love = {
+            x: loveX,
+            y: GROUND_Y - 60,
+            w: 50, h: 60,
+            vx: 0,
+            vy: 0,
+            facing: -1,
+            bob: 0,
+            grounded: true,
+            jumpsLeft: 2,
+            aiJumpCd: 0,
+            lastPlayerX: 0,
+            caught: false
+        };
+
+        stageNameEl.textContent = cfg.name;
+        stageIconEl.textContent = cfg.icon;
+        roleEl.textContent = G.chaserRole === 'fares' ? 'فارس' : 'مها';
+        updateHUD();
+    }
+
+    function updateHUD() {
+        heartsEl.textContent = G.heartsCollected;
+        if (G.love && G.player) {
+            const dist = Math.max(0, Math.round(Math.abs(G.love.x - G.player.x) / 14));
+            distEl.textContent = dist + ' م';
+        }
+    }
+
+    /* ═══════════════════════════════════════════════
+       جزيئات
+       ═══════════════════════════════════════════════ */
+    function spawnParticles(x, y, color, count = 14, speedMult = 1) {
+        for (let i = 0; i < count; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const sp = (60 + Math.random() * 160) * speedMult;
+            G.particles.push({
+                x, y,
+                vx: Math.cos(a) * sp,
+                vy: Math.sin(a) * sp - 60,
+                life: 1, decay: 1.2 + Math.random() * 0.8,
+                size: 2.5 + Math.random() * 3.5,
+                color
+            });
+        }
+    }
+
+    /* ═══════════════════════════════════════════════
+       رسائل طائرة
+       ═══════════════════════════════════════════════ */
+    let toastEl = null;
+    function showToast(msg) {
+        if (!toastEl) {
+            toastEl = document.createElement('div');
+            toastEl.style.cssText = `
+                position: fixed; top: 74px; left: 50%; transform: translateX(-50%) translateY(-10px);
+                z-index: 25; background: linear-gradient(135deg, rgba(236,72,153,0.94), rgba(147,51,234,0.94));
+                border: 1.5px solid #fde68a; color: #fff; padding: 8px 18px;
+                border-radius: 999px; font-size: 13px; font-weight: 700;
+                white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis;
+                box-shadow: 0 8px 25px rgba(236,72,153,0.5);
+                opacity: 0; transition: opacity 0.3s, transform 0.3s;
+                pointer-events: none; font-family: 'Cairo', sans-serif;
+            `;
+            document.body.appendChild(toastEl);
+        }
+        toastEl.textContent = msg;
+        toastEl.style.opacity = '1';
+        toastEl.style.transform = 'translateX(-50%) translateY(0)';
+        clearTimeout(G.toastTimer);
+        G.toastTimer = setTimeout(() => {
+            toastEl.style.opacity = '0';
+            toastEl.style.transform = 'translateX(-50%) translateY(-10px)';
+        }, 2400);
+    }
+
+    /* ═══════════════════════════════════════════════
+       القفز والاندفاع
+       ═══════════════════════════════════════════════ */
+    function jump(char) {
+        if (G.status !== 'playing' || !char) return;
+        if (char.grounded) {
+            char.vy = JUMP_FORCE;
+            char.grounded = false;
+            char.jumpsLeft = 1;
+            sfx.jump();
+            spawnParticles(char.x + char.w / 2, char.y + char.h, '#fff', 8, 0.6);
+        } else if (char.jumpsLeft > 0) {
+            char.vy = DJUMP_FORCE;
+            char.jumpsLeft = 0;
+            sfx.doubleJump();
+            spawnParticles(char.x + char.w / 2, char.y + char.h, '#ff85c0', 12, 0.8);
+        }
+    }
+
+    function dash(char) {
+        if (G.status !== 'playing' || !char) return;
+        if (char.dashCd > 0 || char.dashTimer > 0) return;
+        char.dashTimer = DASH_DUR;
+        char.dashCd = DASH_CD;
+        sfx.dash();
+        spawnParticles(char.x + char.w / 2, char.y + char.h / 2, '#fbbf24', 16, 1.1);
+    }
+
+    /* ═══════════════════════════════════════════════
+       فيزياء شخصية عامة
+       ═══════════════════════════════════════════════ */
+    function updateCharPhysics(char, dt, moveDir) {
+        char.dashCd = Math.max(0, char.dashCd - dt);
+
+        if (char.dashTimer > 0) {
+            char.dashTimer -= dt;
+            char.vx = char.facing * DASH_SPEED;
+            char.vy = 0;
+            if (Math.random() < 0.6) {
+                spawnParticles(char.x + char.w / 2, char.y + char.h / 2, '#fbbf24', 1, 0.3);
+            }
+        } else if (moveDir !== null) {
+            if (moveDir !== 0) {
+                char.vx = moveDir * MOVE_SPEED;
+                char.facing = moveDir;
+                char.walkCycle += dt * 12;
+            } else {
+                char.vx *= 0.78;
+                if (Math.abs(char.vx) < 8) char.vx = 0;
+                char.walkCycle = 0;
+            }
+            char.vy += GRAVITY * dt;
+        } else {
+            char.vy += GRAVITY * dt;
+        }
+
+        // حركة أفقية
+        char.x += char.vx * dt;
+        char.x = Math.max(20, Math.min(STAGES[G.stageIdx].levelLength, char.x));
+
+        // حركة عمودية + تصادم
+        const prevBottom = char.y + char.h;
+        char.y += char.vy * dt;
+        char.grounded = false;
+
+        if (char.vy >= 0) {
+            for (const plat of G.platforms) {
+                const withinX = (char.x + char.w - 6 > plat.x) && (char.x + 6 < plat.x + plat.w);
+                const newBottom = char.y + char.h;
+                if (withinX && prevBottom <= plat.y + 14 && newBottom >= plat.y) {
+                    char.y = plat.y - char.h;
+                    char.vy = 0;
+                    char.grounded = true;
+                    char.jumpsLeft = 2;
+                    if (plat.type === 'moving' && plat.dx) char.x += plat.dx;
+                    break;
+                }
+            }
+        }
+
+        // النوابض
+        for (const sp of G.springs) {
+            if (
+                char.x + char.w > sp.x && char.x < sp.x + sp.w &&
+                char.y + char.h >= sp.y && char.y + char.h <= sp.y + sp.h + 18 &&
+                char.vy >= 0
+            ) {
+                char.vy = -880;
+                char.grounded = false;
+                char.jumpsLeft = 1;
+                sp.bounceAnim = 1;
+                if (char.isPlayer) sfx.doubleJump();
+                spawnParticles(sp.x + sp.w / 2, sp.y, '#38bdf8', 14, 0.9);
+            }
+        }
+
+        // العقبات
+        for (const ob of G.obstacles) {
+            if (
+                char.x + char.w - 6 > ob.x && char.x + 6 < ob.x + ob.w &&
+                char.y + char.h - 4 > ob.y && char.y + 6 < ob.y + ob.h
+            ) {
+                char.vy = -320;
+                if (char.isPlayer) sfx.bump();
+                spawnParticles(ob.x + ob.w / 2, ob.y, '#c084fc', 10, 0.6);
+                break;
+            }
+        }
+
+        // إنقاذ السقوط
+        if (char.y > LOGICAL_H + 100) {
+            let safe = G.platforms[0];
+            for (const plat of G.platforms) {
+                if (plat.type === 'ground' && plat.x <= char.x + 80) safe = plat;
+            }
+            char.x = safe.x + 40;
+            char.y = safe.y - char.h - 20;
+            char.vy = 0;
+            char.jumpsLeft = 2;
+            spawnParticles(char.x + char.w / 2, char.y + char.h / 2, '#ec4899', 16);
+        }
+
+        // ذيل
+        char.trail.push({ x: char.x + char.w / 2, y: char.y + char.h / 2 });
+        if (char.trail.length > 10) char.trail.shift();
+    }
+
+    /* ═══════════════════════════════════════════════
+       تحريك الشريك (يتبع اللاعب تلقائياً)
+       ═══════════════════════════════════════════════ */
+    function updatePartner(dt) {
+        const p = G.player;
+        const pt = G.partner;
+        if (!p || !pt) return;
+
+        // الشريك يبقى على مسافة بجانب اللاعب
+        const targetX = p.x - 70; // خلف اللاعب قليلاً
+        const diff = targetX - pt.x;
+
+        let dir = 0;
+        if (Math.abs(diff) > 12) {
+            dir = diff > 0 ? 1 : -1;
+        }
+
+        // إذا اللاعب يقفز، الشريك يقفز أيضاً
+        if (!p.grounded && pt.grounded && p.vy < -100) {
+            jump(pt);
+        }
+
+        // إذا اللاعب يقف، الشريك يقف
+        if (Math.abs(p.vx) < 20 && Math.abs(diff) < 20) {
+            dir = 0;
+        }
+
+        // تحديث فيزياء الشريك
+        if (dir !== 0) {
+            pt.vx = dir * MOVE_SPEED * 0.95;
+            pt.facing = dir;
+            pt.walkCycle += dt * 12;
+        } else {
+            pt.vx *= 0.78;
+            if (Math.abs(pt.vx) < 8) pt.vx = 0;
+            pt.walkCycle = 0;
+        }
+
+        pt.vy += GRAVITY * dt;
+        pt.x += pt.vx * dt;
+        pt.x = Math.max(20, Math.min(STAGES[G.stageIdx].levelLength, pt.x));
+
+        const prevBottom = pt.y + pt.h;
+        pt.y += pt.vy * dt;
+        pt.grounded = false;
+
+        if (pt.vy >= 0) {
+            for (const plat of G.platforms) {
+                const withinX = (pt.x + pt.w - 6 > plat.x) && (pt.x + 6 < plat.x + plat.w);
+                const newBottom = pt.y + pt.h;
+                if (withinX && prevBottom <= plat.y + 14 && newBottom >= plat.y) {
+                    pt.y = plat.y - pt.h;
+                    pt.vy = 0;
+                    pt.grounded = true;
+                    pt.jumpsLeft = 2;
+                    break;
+                }
+            }
+        }
+
+        // إنقاذ
+        if (pt.y > LOGICAL_H + 100) {
+            pt.x = p.x - 50;
+            pt.y = p.y - 20;
+            pt.vy = 0;
+        }
+
+        pt.trail.push({ x: pt.x + pt.w / 2, y: pt.y + pt.h / 2 });
+        if (pt.trail.length > 8) pt.trail.shift();
+    }
+
+    /* ═══════════════════════════════════════════════
+       ذكاء الحب — يهرب من الشخصيتين معاً!
+       ═══════════════════════════════════════════════ */
+    function updateLove(dt) {
+        const love = G.love;
+        const p = G.player;
+        const pt = G.partner;
+        if (!love || !p || !pt) return;
+
+        love.bob += dt * 4;
+
+        // المسافة الحقيقية من اللاعبين
+        const playerMidX = (p.x + pt.x) / 2 + p.w / 2;
+        const distToLove = love.x - playerMidX;
+
+        // هل اللاعبون يتحركون؟
+        const playerMoving = Math.abs(p.vx) > 30 || Math.abs(pt.vx) > 30;
+        const playerRunningRight = p.vx > 30;
+
+        // ═══ منطق الحب ═══
+        // 1. إذا اللاعبون واقفون → الحب يقف (لكن يبقى أمامهم بمسافة)
+        // 2. إذا اللاعبون يتحركون يميناً → الحب يهرب يميناً
+        // 3. إذا اقترب اللاعبون كثيراً → الحب يسرع
+        // 4. إذا ابتعدوا كثيراً → الحب يبطئ وينتظرهم
+
+        let loveSpeed = 0;
+
+        if (distToLove < LOVE_AHEAD_MIN) {
+            // اقتربوا جداً → يهرب بأقصى سرعة
+            loveSpeed = LOVE_MAX_SPEED;
+            love.facing = 1;
+            if (Math.random() < 0.02 && love.grounded) {
+                // يقفز أحياناً للهروب
+                love.vy = -520;
+                love.grounded = false;
+            }
+        } else if (distToLove > LOVE_AHEAD_MAX) {
+            // ابتعدوا كثيراً → يبطئ وينتظر (لكن لا يتوقف تماماً)
+            loveSpeed = LOVE_BASE_SPEED * 0.4;
+            love.facing = 1;
+        } else if (playerMoving && playerRunningRight) {
+            // اللاعبون يجرون → يهرب بسرعة متوسطة
+            loveSpeed = LOVE_BASE_SPEED + (LOVE_AHEAD_MAX - distToLove) * 0.6;
+            love.facing = 1;
+        } else if (!playerMoving) {
+            // اللاعبون واقفون → الحب يقف
+            loveSpeed = 0;
+            love.facing = -1; // يلتفت لهم بمرح
+        } else {
+            // اللاعبون يتحركون يساراً → الحب يبقى أمامهم
+            loveSpeed = LOVE_BASE_SPEED * 0.7;
+            love.facing = 1;
+        }
+
+        // تطبيق الحركة
+        love.vx = loveSpeed;
+        love.x += love.vx * dt;
+
+        // حدود
+        const maxX = STAGES[G.stageIdx].levelLength - 80;
+        if (love.x > maxX) {
+            love.x = maxX;
+            love.vx = 0;
+        }
+
+        // جاذبية الحب وتصادم بسيط مع الأرض
+        if (!love.grounded) {
+            love.vy += GRAVITY * dt;
+        }
+        love.y += love.vy * dt;
+
+        const prevBottom = love.y + love.h;
+        love.grounded = false;
+        if (love.vy >= 0) {
+            for (const plat of G.platforms) {
+                const withinX = (love.x + love.w - 6 > plat.x) && (love.x + 6 < plat.x + plat.w);
+                if (withinX && prevBottom <= plat.y + 14 && love.y + love.h >= plat.y) {
+                    love.y = plat.y - love.h;
+                    love.vy = 0;
+                    love.grounded = true;
+                    break;
+                }
+            }
+        }
+
+        // إذا سقط الحب في فجوة → يرجع فوق أقرب أرضية
+        if (love.y > LOGICAL_H + 80) {
+            love.y = GROUND_Y - 60;
+            love.vy = 0;
+        }
+
+        // فحص الإمساك
+        const catchDist = Math.hypot(
+            (p.x + p.w / 2) - (love.x + love.w / 2),
+            (p.y + p.h / 2) - (love.y + love.h / 2)
+        );
+        const catchDistPartner = Math.hypot(
+            (pt.x + pt.w / 2) - (love.x + love.w / 2),
+            (pt.y + pt.h / 2) - (love.y + love.h / 2)
+        );
+
+        // الإمساك يتطلب أن يكون اللاعب الأساسي قريباً جداً + الشريك قريب
+        if (!love.caught && (catchDist < 42 || catchDistPartner < 42)) {
+            // فقط إذا كانا الاثنان قريبين
+            if (catchDist < 70 && catchDistPartner < 70) {
+                love.caught = true;
+                handleCatch();
+            }
+        }
+    }
+
+    /* ═══════════════════════════════════════════════
+       الإمساك
+       ═══════════════════════════════════════════════ */
+    function handleCatch() {
+        if (G.status !== 'playing') return;
+        G.status = 'caught';
+        sfx.catchLove();
+
+        const mx = (G.player.x + G.love.x) / 2 + 20;
+        const my = (G.player.y + G.love.y) / 2 + 20;
+        spawnParticles(mx, my, '#ff2e93', 40, 1.4);
+        spawnParticles(mx, my, '#fbbf24', 40, 1.4);
+
+        setTimeout(() => {
+            if (G.stageIdx < STAGES.length - 1) {
+                $('caught-text').textContent = STAGES[G.stageIdx].loveQuote;
+                $('caught-hearts').textContent = G.heartsCollected;
+                $('caught-distance').textContent = Math.round(Math.abs(G.love.x - G.player.x) / 14) + 'م';
+                $('caught-stars').textContent = G.starsCollected;
+                caughtModal.classList.remove('hidden');
+            } else {
+                $('final-hearts').textContent = G.heartsCollected;
+                $('final-stars').textContent = G.starsCollected;
+                finalModal.classList.remove('hidden');
+                sfx.finale();
+            }
+        }, 500);
+    }
+
+    /* ═══════════════════════════════════════════════
+       التحديث الرئيسي
+       ═══════════════════════════════════════════════ */
+    function updatePhysics(dt) {
+        G.time += dt;
+
+        // المنصات المتحركة
+        for (const plat of G.platforms) {
+            if (plat.type === 'moving') {
+                const oldX = plat.x;
+                plat.phase += dt * 1.8;
+                plat.x = plat.baseX + Math.sin(plat.phase) * plat.range;
+                plat.dx = plat.x - oldX;
+            }
+        }
+
+        // نوابض
+        for (const sp of G.springs) {
+            if (sp.bounceAnim > 0) sp.bounceAnim = Math.max(0, sp.bounceAnim - dt * 4);
+        }
+
+        // اللاعب
+        if (G.player) {
+            let dir = 0;
+            if (keys.left) dir -= 1;
+            if (keys.right) dir += 1;
+            updateCharPhysics(G.player, dt, dir);
+        }
+
+        // الشريك
+        updatePartner(dt);
+
+        // الحب
+        updateLove(dt);
+
+        // القلوب والنجوم
+        for (const c of G.collectibles) {
+            if (c.collected) continue;
+            c.bob += dt * 4;
+            // كلتا الشخصيتين يمكنهما الجمع
+            const d1 = Math.hypot((G.player.x + G.player.w / 2) - c.x, (G.player.y + G.player.h / 2) - c.y);
+            const d2 = Math.hypot((G.partner.x + G.partner.w / 2) - c.x, (G.partner.y + G.partner.h / 2) - c.y);
+            if (d1 < 32 || d2 < 32) {
+                c.collected = true;
+                if (c.type === 'heart') {
+                    G.heartsCollected++;
+                    sfx.heart();
+                    spawnParticles(c.x, c.y, '#ff2e93', 14);
+                } else {
+                    G.starsCollected++;
+                    sfx.star();
+                    spawnParticles(c.x, c.y, '#fbbf24', 18);
+                }
+                updateHUD();
+            }
+        }
+
+        // الكاميرا تتبع اللاعب الأساسي (مع نظرة للأمام)
+        const targetCam = Math.max(0, Math.min(G.player.x - viewW * 0.32, STAGES[G.stageIdx].levelLength - viewW));
+        G.camX += (targetCam - G.camX) * Math.min(1, dt * 7);
+
+        updateHUD();
+    }
+
+    /* ═══════════════════════════════════════════════
+       الرسم
+       ═══════════════════════════════════════════════ */
+    function render() {
+        const cfg = STAGES[G.stageIdx];
+
+        // سماء
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, LOGICAL_H);
+        skyGrad.addColorStop(0, cfg.skyTop);
+        skyGrad.addColorStop(0.55, cfg.skyMid);
+        skyGrad.addColorStop(1, cfg.skyBot);
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, viewW, LOGICAL_H);
+
+        // قمر
+        const moonX = viewW * 0.78 - G.camX * 0.04;
+        const moonY = LOGICAL_H * 0.22;
+        const mg = ctx.createRadialGradient(moonX, moonY, 10, moonX, moonY, 95);
+        mg.addColorStop(0, 'rgba(254, 240, 138, 0.85)');
+        mg.addColorStop(0.35, 'rgba(255, 46, 147, 0.25)');
+        mg.addColorStop(1, 'rgba(255, 46, 147, 0)');
+        ctx.fillStyle = mg;
+        ctx.beginPath();
+        ctx.arc(moonX, moonY, 95, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fef9c3';
+        ctx.beginPath();
+        ctx.arc(moonX, moonY, 26, 0, Math.PI * 2);
+        ctx.fill();
+
+        // نجوم الخلفية
+        if (G.bgStars.length === 0) {
+            for (let i = 0; i < 85; i++) {
+                G.bgStars.push({
+                    x: Math.random() * 2200,
+                    y: Math.random() * 500,
+                    r: 0.8 + Math.random() * 1.8,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+        for (const s of G.bgStars) {
+            const sx = ((s.x - G.camX * 0.12) % viewW + viewW) % viewW;
+            const a = 0.3 + 0.6 * (0.5 + 0.5 * Math.sin(G.time * 3 + s.phase));
+            ctx.fillStyle = `rgba(255,255,255,${a})`;
+            ctx.beginPath();
+            ctx.arc(sx, s.y, s.r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // تلال
+        ctx.fillStyle = 'rgba(15, 6, 34, 0.45)';
+        ctx.beginPath();
+        ctx.moveTo(0, LOGICAL_H);
+        for (let x = 0; x <= viewW + 80; x += 80) {
+            const wx = x + G.camX * 0.25;
+            const hy = LOGICAL_H - 140 - Math.sin(wx * 0.004) * 55 - Math.cos(wx * 0.009) * 30;
+            ctx.lineTo(x, hy);
+        }
+        ctx.lineTo(viewW, LOGICAL_H);
+        ctx.closePath();
+        ctx.fill();
+
+        // كاميرا
+        ctx.save();
+        ctx.translate(-G.camX, 0);
+
+        // المنصات
+        for (const p of G.platforms) {
+            if (p.x + p.w < G.camX - 60 || p.x > G.camX + viewW + 60) continue;
+            ctx.fillStyle = cfg.groundColor;
+            roundRect(ctx, p.x, p.y, p.w, p.h, p.type === 'ground' ? 0 : 10);
+            ctx.fill();
+            ctx.fillStyle = cfg.grassColor;
+            roundRect(ctx, p.x, p.y, p.w, 6, 6);
+            ctx.fill();
+        }
+
+        // النوابض
+        for (const sp of G.springs) {
+            const stretch = sp.bounceAnim * 10;
+            ctx.fillStyle = '#38bdf8';
+            roundRect(ctx, sp.x, sp.y - stretch, sp.w, sp.h + stretch, 6);
+            ctx.fill();
+            ctx.fillStyle = '#fde68a';
+            ctx.fillRect(sp.x + 4, sp.y - stretch, sp.w - 8, 4);
+        }
+
+        // العقبات
+        for (const ob of G.obstacles) {
+            ctx.save();
+            ctx.fillStyle = '#a855f7';
+            ctx.shadowColor = '#c084fc';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.moveTo(ob.x, ob.y + ob.h);
+            ctx.lineTo(ob.x + ob.w * 0.25, ob.y);
+            ctx.lineTo(ob.x + ob.w * 0.5, ob.y + ob.h * 0.5);
+            ctx.lineTo(ob.x + ob.w * 0.75, ob.y);
+            ctx.lineTo(ob.x + ob.w, ob.y + ob.h);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // القلوب والنجوم
+        for (const c of G.collectibles) {
+            if (c.collected) continue;
+            if (c.x < G.camX - 40 || c.x > G.camX + viewW + 40) continue;
+            const oy = Math.sin(c.bob) * 5;
+            if (c.type === 'heart') {
+                drawHeart(ctx, c.x, c.y + oy, c.r, '#ff2e93');
+            } else {
+                drawStar(ctx, c.x, c.y + oy, 5, 15, 6.5, '#fbbf24');
+            }
+        }
+
+        // الحب
+        drawLove(ctx, G.love, G.time);
+
+        // الشريك
+        if (G.partner) drawHero(ctx, G.partner);
+
+        // اللاعب
+        if (G.player) drawHero(ctx, G.player);
+
+        // الجزيئات
+        for (const pt of G.particles) {
+            ctx.globalAlpha = Math.max(0, pt.life);
+            ctx.fillStyle = pt.color;
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        ctx.restore();
+    }
+
+    /* ─── أدوات رسم ─── */
+    function roundRect(c, x, y, w, h, r) {
+        c.beginPath();
+        c.moveTo(x + r, y);
+        c.arcTo(x + w, y, x + w, y + h, r);
+        c.arcTo(x + w, y + h, x, y + h, r);
+        c.arcTo(x, y + h, x, y, r);
+        c.arcTo(x, y, x + w, y, r);
+        c.closePath();
+    }
+
+    function drawHeart(c, x, y, size, color) {
+        c.save();
+        c.translate(x, y);
+        c.fillStyle = color;
+        c.shadowColor = color;
+        c.shadowBlur = 14;
+        c.beginPath();
+        c.moveTo(0, size * 0.35);
+        c.bezierCurveTo(-size, -size * 0.4, -size * 0.5, -size * 1.1, 0, -size * 0.45);
+        c.bezierCurveTo(size * 0.5, -size * 1.1, size, -size * 0.4, 0, size * 0.35);
+        c.fill();
+        c.restore();
+    }
+
+    function drawStar(c, cx, cy, spikes, outer, inner, color) {
+        let rot = Math.PI / 2 * 3;
+        const step = Math.PI / spikes;
+        c.save();
+        c.beginPath();
+        c.moveTo(cx, cy - outer);
+        for (let i = 0; i < spikes; i++) {
+            let x = cx + Math.cos(rot) * outer;
+            let y = cy + Math.sin(rot) * outer;
+            c.lineTo(x, y);
+            rot += step;
+            x = cx + Math.cos(rot) * inner;
+            y = cy + Math.sin(rot) * inner;
+            c.lineTo(x, y);
+            rot += step;
+        }
+        c.lineTo(cx, cy - outer);
+        c.closePath();
+        c.fillStyle = color;
+        c.shadowColor = color;
+        c.shadowBlur = 10;
+        c.fill();
+        c.restore();
+    }
+
+    function drawHero(c, ch) {
+        if (!ch) return;
+
+        for (let i = 0; i < ch.trail.length; i++) {
+            const t = ch.trail[i];
+            const ratio = (i + 1) / ch.trail.length;
+            c.fillStyle = ch.id === 'fares' ? '#38bdf8' : '#ff2e93';
+            c.globalAlpha = ratio * 0.22;
+            c.beginPath();
+            c.arc(t.x, t.y, 12 * ratio, 0, Math.PI * 2);
+            c.fill();
+        }
+        c.globalAlpha = 1;
+
+        const cx = ch.x + ch.w / 2;
+        const cy = ch.y + ch.h / 2;
+
+        c.save();
+        c.textAlign = 'center';
+        c.font = 'bold 13px Cairo, sans-serif';
+        c.fillStyle = ch.id === 'fares' ? '#fde68a' : '#fbcfe8';
+        c.shadowColor = 'rgba(0,0,0,0.8)';
+        c.shadowBlur = 6;
+        const label = ch.isPlayer
+            ? (ch.id === 'fares' ? '👑 فارس ⭐' : '👸 مها ⭐')
+            : (ch.id === 'fares' ? '👑 فارس' : '👸 مها');
+        c.fillText(label, cx, ch.y - 10);
+        c.shadowBlur = 0;
+
+        c.translate(cx, cy);
+        c.scale(ch.facing, 1);
+
+        const legSwing = Math.sin(ch.walkCycle) * 7;
+        c.fillStyle = '#1e1b4b';
+        roundRect(c, -10 + legSwing, 12, 8, 13, 4); c.fill();
+        roundRect(c, 2 - legSwing, 12, 8, 13, 4); c.fill();
+
+        c.fillStyle = ch.id === 'fares' ? '#38bdf8' : '#ff2e93';
+        roundRect(c, -13, -4, 26, 20, 8); c.fill();
+
+        c.fillStyle = ch.id === 'fares' ? '#fbbf24' : '#f472b6';
+        c.beginPath();
+        c.arc(2, 5, 4.5, 0, Math.PI * 2);
+        c.fill();
+
+        c.fillStyle = '#fde68a';
+        c.beginPath();
+        c.arc(0, -13, 12, 0, Math.PI * 2);
+        c.fill();
+
+        if (ch.id === 'fares') {
+            c.fillStyle = '#1e1b4b';
+            c.beginPath();
+            c.arc(-1, -16, 12, Math.PI, Math.PI * 2);
+            c.fill();
+            c.strokeStyle = '#1e1b4b';
+            c.lineWidth = 2;
+            c.strokeRect(2, -16, 7, 5);
+        } else {
+            c.fillStyle = '#2e1065';
+            c.beginPath();
+            c.arc(-3, -14, 13, Math.PI * 0.7, Math.PI * 2.1);
+            c.fill();
+            roundRect(c, -15, -14, 9, 22, 5); c.fill();
+            c.fillStyle = '#1e1b4b';
+            c.beginPath();
+            c.arc(5, -13, 2.2, 0, Math.PI * 2);
+            c.fill();
+        }
+
+        // هالة على اللاعب الأساسي
+        if (ch.isPlayer) {
+            c.strokeStyle = 'rgba(251, 191, 36, 0.5)';
+            c.lineWidth = 2;
+            c.beginPath();
+            c.arc(0, -5, 28, 0, Math.PI * 2);
+            c.stroke();
+        }
+
+        c.restore();
+    }
+
+    function drawLove(c, love, time) {
+        if (!love) return;
+        const cx = love.x + love.w / 2;
+        const bobY = Math.sin(love.bob) * 6;
+        const cy = love.y + love.h / 2 + bobY;
+
+        // هالة
+        const glow = c.createRadialGradient(cx, cy, 5, cx, cy, 90);
+        glow.addColorStop(0, 'rgba(255, 46, 147, 0.65)');
+        glow.addColorStop(1, 'rgba(255, 46, 147, 0)');
+        c.fillStyle = glow;
+        c.beginPath();
+        c.arc(cx, cy, 90, 0, Math.PI * 2);
+        c.fill();
+
+        // الاسم
+        c.save();
+        c.textAlign = 'center';
+        c.font = 'bold 15px Cairo, sans-serif';
+        c.fillStyle = '#fde68a';
+        c.shadowColor = '#ff2e93';
+        c.shadowBlur = 10;
+        c.fillText('❤️ الحب', cx, love.y - 12);
+        c.restore();
+
+        // القلب
+        const beat = 1 + Math.sin(time * 5) * 0.14;
+        drawHeart(c, cx, cy, 34 * beat, '#ff2e93');
+
+        // وجه
+        c.save();
+        c.fillStyle = '#fff';
+        c.beginPath();
+        c.arc(cx - 9, cy - 5, 3.5, 0, Math.PI * 2);
+        c.arc(cx + 9, cy - 5, 3.5, 0, Math.PI * 2);
+        c.fill();
+
+        c.strokeStyle = '#fff';
+        c.lineWidth = 2.5;
+        c.beginPath();
+        c.arc(cx, cy + 3, 9, 0.15 * Math.PI, 0.85 * Math.PI);
+        c.stroke();
+        c.restore();
+
+        // فقاعة كلام
+        const bubbleW = 210;
+        const bubbleH = 48;
+        const bubbleX = cx - bubbleW / 2;
+        const bubbleY = love.y - 85;
+        c.save();
+        c.fillStyle = 'rgba(255,255,255,0.96)';
+        c.strokeStyle = '#ff2e93';
+        c.lineWidth = 2;
+        roundRect(c, bubbleX, bubbleY, bubbleW, bubbleH, 14);
+        c.fill();
+        c.stroke();
+
+        c.fillStyle = '#111';
+        c.font = 'bold 11px Cairo, sans-serif';
+        c.textAlign = 'center';
+        c.fillText('تعالوا لي.. أنا الحب! 💕', cx, bubbleY + 19);
+        c.font = '10px Cairo, sans-serif';
+        c.fillStyle = '#9333ea';
+        c.fillText('لن تمسكوني بسهولة!', cx, bubbleY + 36);
+        c.restore();
+    }
+
+    /* ═══════════════════════════════════════════════
+       حلقة اللعبة
+       ═══════════════════════════════════════════════ */
+    let lastTime = 0;
+    function gameLoop(ts) {
+        if (!document.getElementById('game-wrap')) {
+            if (animId) cancelAnimationFrame(animId);
+            return;
+        }
+        if (!lastTime) lastTime = ts;
+        const dt = Math.min((ts - lastTime) / 1000, 0.05);
+        lastTime = ts;
+
+        // جزيئات
+        for (let i = G.particles.length - 1; i >= 0; i--) {
+            const pt = G.particles[i];
+            pt.x += pt.vx * dt;
+            pt.y += pt.vy * dt;
+            pt.vy += 260 * dt;
+            pt.life -= pt.decay * dt;
+            if (pt.life <= 0) G.particles.splice(i, 1);
+        }
+
+        if (G.status === 'playing') {
+            updatePhysics(dt);
+        } else if (G.love) {
+            G.love.bob += dt * 4;
+        }
+
+        render();
+        animId = requestAnimationFrame(gameLoop);
+    }
+
+    /* ═══════════════════════════════════════════════
+       الأبعاد
+       ═══════════════════════════════════════════════ */
+    function handleResize() {
+        const wrap = document.getElementById('game-wrap');
+        if (!wrap) return;
+        const rect = wrap.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        scaleF = (rect.height * dpr) / LOGICAL_H;
+        viewW = (rect.width * dpr) / scaleF;
+        ctx.setTransform(scaleF, 0, 0, scaleF, 0, 0);
+    }
+
+    /* ═══════════════════════════════════════════════
+       الأحداث
+       ═══════════════════════════════════════════════ */
+    function startGame(role) {
+        sfx.init();
+        G.chaserRole = role;
+        G.stageIdx = 0;
+        G.heartsCollected = 0;
+        G.starsCollected = 0;
+        startOverlay.classList.add('hidden');
+        caughtModal.classList.add('hidden');
+        finalModal.classList.add('hidden');
+        buildStage(0);
+        G.status = 'playing';
+        showToast(role === 'fares' ? '🏃‍♂️ تحكم بفارس — ومها معك!' : '🏃‍♀️ تحكم بمها — وفارس معك!');
+    }
+
+    $('pick-fares').addEventListener('click', () => startGame('fares'));
+    $('pick-maha').addEventListener('click', () => startGame('maha'));
+
+    $('btn-next-stage').addEventListener('click', () => {
+        caughtModal.classList.add('hidden');
+        G.stageIdx = Math.min(G.stageIdx + 1, STAGES.length - 1);
+        buildStage(G.stageIdx);
+        G.status = 'playing';
+    });
+
+    $('btn-replay-stage').addEventListener('click', () => {
+        caughtModal.classList.add('hidden');
+        buildStage(G.stageIdx);
+        G.status = 'playing';
+    });
+
+    $('btn-final-again').addEventListener('click', () => {
+        finalModal.classList.add('hidden');
+        startGame(G.chaserRole);
+    });
+
+    $('btn-final-switch').addEventListener('click', () => {
+        finalModal.classList.add('hidden');
+        startGame(G.chaserRole === 'fares' ? 'maha' : 'fares');
+    });
+
+    $('btn-restart').addEventListener('click', () => {
+        if (G.status === 'playing' || G.status === 'caught') {
+            caughtModal.classList.add('hidden');
+            buildStage(G.stageIdx);
+            G.status = 'playing';
+        }
+    });
+
+    $('btn-sound').addEventListener('click', () => {
+        sfx.muted = !sfx.muted;
+        $('sound-icon').textContent = sfx.muted ? '🔇' : '🔊';
+    });
+
+    // لوحة المفاتيح
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+            if (!keys.jump) {
+                keys.jump = true;
+                if (G.player) jump(G.player);
+            }
+        }
+        if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyK') {
+            if (G.player) dash(G.player);
+        }
+        if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+            e.preventDefault();
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.jump = false;
+    });
+
+    // اللمس
+    function bindHold(btnId, on, off) {
+        const btn = $(btnId);
+        if (!btn) return;
+        const press = (e) => { e.preventDefault(); on(); btn.classList.add('pressed'); };
+        const release = (e) => { e.preventDefault(); off(); btn.classList.remove('pressed'); };
+        btn.addEventListener('touchstart', press, { passive: false });
+        btn.addEventListener('touchend', release, { passive: false });
+        btn.addEventListener('touchcancel', release, { passive: false });
+        btn.addEventListener('mousedown', press);
+        btn.addEventListener('mouseup', release);
+        btn.addEventListener('mouseleave', release);
+    }
+
+    bindHold('touch-left', () => keys.left = true, () => keys.left = false);
+    bindHold('touch-right', () => keys.right = true, () => keys.right = false);
+
+    function bindTap(btnId, action) {
+        const btn = $(btnId);
+        if (!btn) return;
+        const press = (e) => {
+            e.preventDefault();
+            btn.classList.add('pressed');
+            if (G.player) action(G.player);
+        };
+        const release = (e) => { e.preventDefault(); btn.classList.remove('pressed'); };
+        btn.addEventListener('touchstart', press, { passive: false });
+        btn.addEventListener('touchend', release, { passive: false });
+        btn.addEventListener('mousedown', press);
+        btn.addEventListener('mouseup', release);
+    }
+
+    bindTap('touch-jump', jump);
+    bindTap('touch-dash', dash);
+
+    function checkOrientation() {
+        const overlay = document.getElementById('rotate-warning');
+        if (!overlay) return;
+        const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+        const isNarrow = window.innerWidth < 900;
+        if (isPortrait && isNarrow) overlay.classList.add('show');
+        else overlay.classList.remove('show');
+    }
+    window.addEventListener('resize', () => { handleResize(); checkOrientation(); });
+    window.addEventListener('orientationchange', () => {
+        setTimeout(() => { handleResize(); checkOrientation(); }, 300);
+    });
+
+    /* ═══════════════════════════════════════════════
+       التهيئة
+       ═══════════════════════════════════════════════ */
+    handleResize();
+    checkOrientation();
+    buildStage(0);
+    G.status = 'menu';
+    animId = requestAnimationFrame(gameLoop);
+})();
+</script>
+</body>
+</html>
