@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مطاردة الحب - فارس ومها 🏃‍♂️💨❤️ | مغامرة منصات</title>
+    <style>
+        /* ==========================================================================
+           تنسيقات معزولة تماماً داخل #love-chase-root لضمان العمل المستقل وداخل fetch()
+           ========================================================================== */
+        #love-chase-root {
+            --bg-night: #0b051d;
+            --bg-plum: #1d0c3b;
+            --pink-neon: #ff2e93;
+            --pink-light: #ff85c0;
+            --gold-bright: #fbbf24;
+            --cyan-glow: #38bdf8;
+            --purple-accent: #9333ea;
+            --glass: rgba(18, 9, 40, 0.84);
+            --glass-border: rgba(255, 46, 147, 0.42);
+
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: linear-gradient(180deg, #090418 0%, #1c0b38 55%, #2d104b 100%);
+            color: #fff5f9;
+            font-family: system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            z-index: 1;
+        }
+
+        #love-chase-root * {
+            box-sizing: border-box;
+        }
+
+        /* لوحة الرسم الرئيسية للعبة */
+        #lc-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+            z-index: 1;
+        }
+
+        /* ==========================================================================
+           شريط المعلومات العلوي (HUD)
+           ========================================================================== */
+        #love-chase-root .lc-hud {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            z-index: 15;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            pointer-events: none;
+            flex-wrap: wrap;
+        }
+
+        #love-chase-root .lc-pill {
+            pointer-events: auto;
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+        }
+
+        #love-chase-root .lc-dist-badge {
+            color: #fde68a;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #love-chase-root .lc-hud-actions {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #love-chase-root .lc-btn-circle {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+            transition: transform 0.15s ease;
+        }
+
+        #love-chase-root .lc-btn-circle:active {
+            transform: scale(0.9);
+        }
+
+        /* إشعار رسائل الحب الطائرة عند جمع القلوب الذهبية */
+        #love-chase-root .lc-quote-toast {
+            position: absolute;
+            top: 62px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-10px);
+            z-index: 16;
+            background: linear-gradient(135deg, rgba(255, 46, 147, 0.92), rgba(147, 51, 234, 0.92));
+            border: 1.5px solid #fde68a;
+            color: #fff;
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+            max-width: 92vw;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-shadow: 0 8px 25px rgba(255, 46, 147, 0.45);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        #love-chase-root .lc-quote-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ==========================================================================
+           أزرار التحكم باللمس المتعدد للهواتف (Multi-Touch Controls)
+           ========================================================================== */
+        #love-chase-root .lc-touch-layer {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            z-index: 20;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        #love-chase-root .lc-touch-group {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #love-chase-root .lc-pad-btn {
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            background: rgba(25, 12, 54, 0.62);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 2px solid rgba(255, 133, 192, 0.48);
+            color: #fff;
+            font-size: 22px;
+            font-weight: 800;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+            touch-action: none;
+            transition: transform 0.08s ease, background 0.1s ease, border-color 0.1s ease;
+        }
+
+        #love-chase-root .lc-pad-btn span {
+            font-size: 10px;
+            font-weight: 700;
+            color: #fbcfe8;
+            margin-top: -2px;
+        }
+
+        #love-chase-root .lc-pad-btn.active {
+            transform: scale(0.9);
+            background: rgba(255, 46, 147, 0.65);
+            border-color: #fde68a;
+        }
+
+        #love-chase-root .lc-pad-btn.dash-btn {
+            border-color: rgba(251, 191, 36, 0.65);
+            width: 58px;
+            height: 58px;
+        }
+
+        #love-chase-root .lc-pad-btn.dash-btn.cooldown {
+            opacity: 0.45;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ==========================================================================
+           النوافذ المنبثقة (شاشة البداية الفخمة، بطاقة الإمساك، والنهاية)
+           ========================================================================== */
+        #love-chase-root .lc-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 40;
+            background: rgba(7, 3, 18, 0.82);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        #love-chase-root .lc-hidden {
+            display: none !important;
+        }
+
+        #love-chase-root .lc-card {
+            width: 100%;
+            max-width: 470px;
+            background: linear-gradient(160deg, rgba(32, 13, 66, 0.96) 0%, rgba(12, 5, 28, 0.98) 100%);
+            border: 1.5px solid rgba(251, 191, 36, 0.5);
+            border-radius: 28px;
+            padding: 24px 20px;
+            text-align: center;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.85), 0 0 40px rgba(255, 46, 147, 0.25);
+            animation: lcCardPop 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes lcCardPop {
+            0% { opacity: 0; transform: scale(0.88) translateY(16px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        #love-chase-root .lc-badge {
+            display: inline-block;
+            padding: 5px 14px;
+            border-radius: 999px;
+            background: rgba(255, 46, 147, 0.18);
+            border: 1px solid rgba(255, 46, 147, 0.5);
+            color: #ff85c0;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        #love-chase-root .lc-title {
+            font-size: 25px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #ff85c0, #fde68a, #7dd3fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 8px 0;
+            line-height: 1.35;
+        }
+
+        #love-chase-root .lc-sub {
+            font-size: 13.5px;
+            color: #e9d5ff;
+            line-height: 1.65;
+            margin: 0 0 16px 0;
+        }
+
+        /* اختيار نمط اللعب (فردي أو لاعبين) */
+        #love-chase-root .lc-mode-switch {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 5px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            margin-bottom: 14px;
+        }
+
+        #love-chase-root .lc-mode-opt {
+            padding: 9px 10px;
+            border-radius: 12px;
+            border: none;
+            background: transparent;
+            color: #d8b4fe;
+            font-size: 12.5px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #love-chase-root .lc-mode-opt.active {
+            background: linear-gradient(135deg, #9333ea, #ff2e93);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(255, 46, 147, 0.4);
+        }
+
+        /* بطاقتا اختيار الدور (فارس يلحق مها / مها تلحق فارس) */
+        #love-chase-root .lc-role-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        #love-chase-root .lc-role-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 20px;
+            border: 1.5px solid rgba(251, 191, 36, 0.45);
+            background: linear-gradient(135deg, rgba(255, 46, 147, 0.18), rgba(251, 191, 36, 0.14));
+            color: #fff;
+            text-align: right;
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #love-chase-root .lc-role-btn:hover {
+            border-color: #fde68a;
+            box-shadow: 0 8px 25px rgba(255, 46, 147, 0.35);
+        }
+
+        #love-chase-root .lc-role-btn:active {
+            transform: scale(0.97);
+        }
+
+        #love-chase-root .lc-role-btn.maha-role {
+            border-color: rgba(255, 46, 147, 0.6);
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(255, 46, 147, 0.22));
+        }
+
+        #love-chase-root .lc-role-icon {
+            font-size: 30px;
+            flex-shrink: 0;
+        }
+
+        #love-chase-root .lc-role-info strong {
+            display: block;
+            font-size: 15px;
+            color: #fde68a;
+            margin-bottom: 2px;
+        }
+
+        #love-chase-root .lc-role-info span {
+            display: block;
+            font-size: 12px;
+            color: #f3e8ff;
+        }
+
+        #love-chase-root .lc-controls-hint {
+            font-size: 11.5px;
+            color: #cbd5e1;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 12px;
+            line-height: 1.6;
+        }
+
+        /* صندوق الشعر في نهاية المرحلة */
+        #love-chase-root .lc-poem-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(251, 191, 36, 0.35);
+            border-radius: 20px;
+            padding: 16px 14px;
+            margin: 14px 0;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 17.5px;
+            line-height: 1.9;
+            color: #fff1f2;
+        }
+
+        #love-chase-root .lc-primary-btn {
+            width: 100%;
+            padding: 13px 20px;
+            border: none;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #ff2e93 0%, #9333ea 55%, #f59e0b 100%);
+            color: #fff;
+            font-size: 15.5px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(255, 46, 147, 0.45);
+            transition: transform 0.15s ease;
+        }
+
+        #love-chase-root .lc-primary-btn:active {
+            transform: scale(0.96);
+        }
+
+        #love-chase-root .lc-secondary-btn {
+            margin-top: 9px;
+            width: 100%;
+            padding: 11px 18px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #f3e8ff;
+            font-size: 13.5px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body style="margin:0;padding:0;background:#0b051d;">
+
+<div id="love-chase-root">
+    <!-- لوحة الرسم ثنائية الأبعاد -->
+    <canvas id="lc-canvas"></canvas>
+
+    <!-- شريط المعلومات العلوي -->
+    <div class="lc-hud">
+        <div class="lc-pill">
+            <span id="lc-stage-name">🌸 حديقة الغروب</span>
+            <span style="opacity:0.4">|</span>
+            <span>❤️ <strong id="lc-hearts-count">0</strong></span>
+            <span style="opacity:0.4">|</span>
+            <span class="lc-dist-badge">المسافة: <strong id="lc-distance-text">25</strong>م</span>
+        </div>
+
+        <div class="lc-hud-actions">
+            <button id="lc-swap-role-btn" class="lc-btn-circle" title="تبديل الأدوار" aria-label="تبديل الأدوار">🔁</button>
+            <button id="lc-restart-btn" class="lc-btn-circle" title="إعادة المرحلة" aria-label="إعادة المرحلة">🔄</button>
+            <button id="lc-sound-btn" class="lc-btn-circle" title="الصوت" aria-label="الصوت">🔊</button>
+        </div>
+    </div>
+
+    <!-- شريط رسائل الحب الطائرة -->
+    <div id="lc-quote-toast" class="lc-quote-toast">💌 أحبك يا مها!</div>
+
+    <!-- أزرار التحكم باللمس للهواتف (Multi-Touch) -->
+    <div id="lc-touch-layer" class="lc-touch-layer lc-hidden">
+        <!-- أزرار الاتجاه (يسار / يمين) -->
+        <div class="lc-touch-group">
+            <button type="button" class="lc-pad-btn" id="btn-touch-right" aria-label="يمين">➡️<span>يمين</span></button>
+            <button type="button" class="lc-pad-btn" id="btn-touch-left" aria-label="يسار">⬅️<span>يسار</span></button>
+        </div>
+
+        <!-- أزرار القفز والاندفاع -->
+        <div class="lc-touch-group">
+            <button type="button" class="lc-pad-btn dash-btn" id="btn-touch-dash" aria-label="اندفاع">⚡<span>اندفاع</span></button>
+            <button type="button" class="lc-pad-btn" id="btn-touch-jump" aria-label="قفز">⬆️<span>قفز</span></button>
+        </div>
+    </div>
+
+    <!-- 1. شاشة البداية واختيار الأدوار -->
+    <div id="lc-start-modal" class="lc-overlay">
+        <div class="lc-card">
+            <div class="lc-badge">🏃‍♂️💨 مغامرة منصات على طريقة ماريو ❤️</div>
+            <h1 class="lc-title">مطاردة الحب: فارس ومها</h1>
+            <p class="lc-sub">
+                اقفز فوق المنصات والنوابض، اجمع القلوب الذهبية ورسائل الغزل، والحق بنصفك الثاني قبل نهاية المضمار!
+            </p>
+
+            <!-- اختيار نمط اللعب: فردي أو لاعبين -->
+            <div class="lc-mode-switch" role="group" aria-label="نمط اللعب">
+                <button type="button" class="lc-mode-opt active" id="mode-solo-btn">🤖 فردي (ضد الذكاء الاصطناعي)</button>
+                <button type="button" class="lc-mode-opt" id="mode-duo-btn">👫 لاعبين معاً (نفس الجهاز)</button>
+            </div>
+
+            <!-- اختيار من يركض وراء من -->
+            <div class="lc-role-grid">
+                <button type="button" class="lc-role-btn" id="pick-fares-chaser">
+                    <div class="lc-role-icon">👑🏃‍♂️</div>
+                    <div class="lc-role-info">
+                        <strong>فارس يركض وراء مها</strong>
+                        <span>تحكم بـ فارس والحق بـ مها التي تنثر لك القلوب والرسائل!</span>
+                    </div>
+                    <div style="font-size:20px;">⬅️</div>
+                </button>
+
+                <button type="button" class="lc-role-btn maha-role" id="pick-maha-chaser">
+                    <div class="lc-role-icon">👸🏃‍♀️</div>
+                    <div class="lc-role-info">
+                        <strong>مها تركض وراء فارس</strong>
+                        <span>تحكمي بـ مها والحقي بـ فارس الذي يهرب بمرح فوق المنصات!</span>
+                    </div>
+                    <div style="font-size:20px;">⬅️</div>
+                </button>
+            </div>
+
+            <div class="lc-controls-hint" id="lc-controls-hint">
+                📱 <b>الهاتف:</b> أزرار لمس متعددة (قفز مزدوج + اندفاع سريع ⚡)<br>
+                💻 <b>الكمبيوتر:</b> الأسهم أو WASD للتحرك والقفز، و Shift للاندفاع
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. بطاقة الفوز والإمساك في نهاية كل مرحلة -->
+    <div id="lc-win-modal" class="lc-overlay lc-hidden">
+        <div class="lc-card">
+            <div id="lc-win-badge" class="lc-badge">🎉 تم الإمساك بنجاح! 🎉</div>
+            <div id="lc-win-emoji" style="font-size: 46px; margin-bottom: 6px;">💑✨</div>
+            <h2 id="lc-win-title" class="lc-title">مسكتك يا روحي!</h2>
+            <div id="lc-win-poem" class="lc-poem-box"></div>
+            <p id="lc-win-stats" class="lc-sub" style="font-size: 13px; margin-bottom: 16px;"></p>
+            <button type="button" class="lc-primary-btn" id="lc-next-stage-btn">المرحلة التالية 🌠</button>
+            <button type="button" class="lc-secondary-btn" id="lc-switch-side-btn">تبديل الأدوار في هذه المرحلة 🔁</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const root = document.getElementById('love-chase-root');
+        const canvas = document.getElementById('lc-canvas');
+        if (!root || !canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        // عناصر الواجهة
+        const stageNameEl = document.getElementById('lc-stage-name');
+        const heartsCountEl = document.getElementById('lc-hearts-count');
+        const distanceTextEl = document.getElementById('lc-distance-text');
+        const quoteToastEl = document.getElementById('lc-quote-toast');
+        const touchLayer = document.getElementById('lc-touch-layer');
+
+        const startModal = document.getElementById('lc-start-modal');
+        const modeSoloBtn = document.getElementById('mode-solo-btn');
+        const modeDuoBtn = document.getElementById('mode-duo-btn');
+        const pickFaresBtn = document.getElementById('pick-fares-chaser');
+        const pickMahaBtn = document.getElementById('pick-maha-chaser');
+        const controlsHintEl = document.getElementById('lc-controls-hint');
+
+        const winModal = document.getElementById('lc-win-modal');
+        const winBadgeEl = document.getElementById('lc-win-badge');
+        const winEmojiEl = document.getElementById('lc-win-emoji');
+        const winTitleEl = document.getElementById('lc-win-title');
+        const winPoemEl = document.getElementById('lc-win-poem');
+        const winStatsEl = document.getElementById('lc-win-stats');
+        const nextStageBtn = document.getElementById('lc-next-stage-btn');
+        const switchSideBtn = document.getElementById('lc-switch-side-btn');
+
+        const swapRoleBtn = document.getElementById('lc-swap-role-btn');
+        const restartBtn = document.getElementById('lc-restart-btn');
+        const soundBtn = document.getElementById('lc-sound-btn');
+
+        /**
+         * ============================================================================
+         * 1. محرك الصوت التفاعلي (Web Audio API بدون ملفات خارجية)
+         * ============================================================================
+         */
+        const sfx = {
+            ctx: null,
+            muted: false,
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+            playJump(isDouble = false) {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                const f1 = isDouble ? 420 : 280;
+                const f2 = isDouble ? 760 : 540;
+                osc.frequency.setValueAtTime(f1, now);
+                osc.frequency.exponentialRampToValueAtTime(f2, now + 0.16);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.18);
+            },
+            playSpring() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(240, now);
+                osc.frequency.exponentialRampToValueAtTime(920, now + 0.28);
+                gain.gain.setValueAtTime(0.16, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.31);
+            },
+            playDash() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(580, now);
+                osc.frequency.exponentialRampToValueAtTime(180, now + 0.18);
+                gain.gain.setValueAtTime(0.09, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            },
+            playHeart(isGold = false) {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(isGold ? 784 : 659, now);
+                osc.frequency.exponentialRampToValueAtTime(isGold ? 1174 : 987, now + 0.14);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.17);
+            },
+            playBump() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.16);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.18);
+            },
+            playCatchVictory() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+                const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                notes.forEach((f, idx) => {
+                    const st = this.ctx.currentTime + idx * 0.09;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(f, st);
+                    gain.gain.setValueAtTime(0.15, st);
+                    gain.gain.exponentialRampToValueAtTime(0.001, st + 0.55);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(st);
+                    osc.stop(st + 0.56);
+                });
+            }
+        };
+
+        /**
+         * ============================================================================
+         * 2. رسائل الغزل والمرح التي تنثرها الشخصية الهاربة أثناء الركض
+         * ============================================================================
+         */
+        const LOVE_NOTES_FROM_MAHA = [
+            "💌 يلا الحقني يا فارسي إذا تقدر!",
+            "🌸 قلبي يسبقني إليك يا أبو أهل العلم!",
+            "✨ أسرع يا حبيبي.. القلوب تنتظرك!",
+            "💖 مهما ركضت.. مصيري بين يديك!",
+            "👑 أنت بطل مغامرتي يا فارس!"
+        ];
+
+        const LOVE_NOTES_FROM_FARES = [
+            "💌 تعالي الحقي فارسك يا أميرة قلبي!",
+            "🌹 خطواتكِ أجمل لحن في الدنيا يا مها!",
+            "✨ اقفزي عالياً يا يروحي.. أنا قريب!",
+            "💖 فداكي كل القلوب والنجوم يا مها!",
+            "🤓 حتى أهل العلم ما قدروا يوقفوا حبي إلك!"
+        ];
+
+        /**
+         * ============================================================================
+         * 3. تصميم المراحل الثلاث المتنوعة (حديقة الغروب، جسور السماء، قصر النجوم)
+         * ============================================================================
+         */
+        const STAGES = [
+            {
+                id: 1,
+                name: "🌸 حديقة الغروب الوردية",
+                skyTop: "#14082b",
+                skyMid: "#3b1254",
+                skyBot: "#701a5c",
+                groundColor: "#240d3d",
+                grassColor: "#ff2e93",
+                levelLength: 4200,
+                poemFaresWins: "ركضتُ خلفكِ والاشواقُ تسبقُني<br>حتّى ظفرتُ بنبضِ القلبِ والقمرِ..<br>فأنتِ في كلِّ أرضٍ جئتُ أعبرُها<br>أحلى الحكاياتِ في سمعي وفي بصري ❤️",
+                poemMahaWins: "لحقتِ بي كنسيمِ الفجرِ في ولهٍ<br>فذابَ قلبي وحارَ العقلُ في أمري..<br>يا أجملَ الفوزِ في الدنيا وبهجتَها<br>مسكتِ قلبي.. وصارَ الحبُّ لي قدري 💖"
+            },
+            {
+                id: 2,
+                name: "🌠 جسور السماء المضيئة",
+                skyTop: "#070b24",
+                skyMid: "#132354",
+                skyBot: "#2b195c",
+                groundColor: "#111b42",
+                grassColor: "#38bdf8",
+                levelLength: 4800,
+                poemFaresWins: "عبرتُ فوقَ جسورِ النجمِ مُنطلقاً<br>لا شيءَ يوقفُ خطوي نحوَ لقياكِ..<br>يا «يروحي» ويا سِحرَ الحياةِ معاً<br>فداكِ عمري وكلُّ الكونِ يفداكِ 🌠❤️",
+                poemMahaWins: "قفزتِ فوقَ الغيومِ الزُرقِ واثقةً<br>حتّى أتاكِ فؤادي طائعاً فَرِحا..<br>فأنتِ نجمةُ ليلي حينَ تُظلمُ بي<br>وأنتِ أجملُ بابٍ للهوى فُتِحا ✨💜"
+            },
+            {
+                id: 3,
+                name: "👑 قصر النجوم الذهبي",
+                skyTop: "#090418",
+                skyMid: "#220c42",
+                skyBot: "#4a154b",
+                groundColor: "#1b0933",
+                grassColor: "#fbbf24",
+                levelLength: 5400,
+                poemFaresWins: "وصلتُ قصرَكِ والأضواءُ ساطعةٌ<br>تُوِّجتُ فيكِ أميراً ليسَ ينهزمُ..<br>فـ «مها» في مهجتي تاجٌ ومملكةٌ<br>وباسمِها تكتملُ الأشعارُ والنّغمُ 👑❤️",
+                poemMahaWins: "في قصرِ نجمِكِ قد أدركتُ أمنيتي<br>وصرتِ مالكةً للروحِ والبصرِ..<br>أنا ما بينَ أهلِ العلمِ أُعلنُها:<br>بأنَّ «مها» هي الأغلى مدى العُمرِ 👑🤓"
+            }
+        ];
+
+        /**
+         * ============================================================================
+         * 4. الحالة الرئيسية للعبة والفيزياء
+         * ============================================================================
+         */
+        const state = {
+            w: 0,
+            h: 0,
+            dpr: 1,
+            gameMode: 'solo', // 'solo' | 'duo'
+            chaserRole: 'fares', // 'fares' (فارس يلحق مها) | 'maha' (مها تلحق فارس)
+            stageIdx: 0,
+            status: 'menu', // 'menu' | 'playing' | 'won'
+            cameraX: 0,
+            heartsCollected: 0,
+            lastTime: 0,
+            animId: null,
+            // عناصر المرحلة المبنية ديناميكياً
+            platforms: [],
+            springs: [],
+            obstacles: [],
+            collectibles: [],
+            particles: [],
+            bgStars: [],
+            // اللاعبان
+            fares: null,
+            maha: null,
+            // المدخلات
+            keys: {},
+            touch: { left: false, right: false, jump: false, dash: false },
+            toastTimer: null
+        };
+
+        const GRAVITY = 1550;
+        const FLOOR_OFFSET = 86;
+
+        /**
+         * إنشاء كائن شخصية (فارس أو مها)
+         */
+        function createCharacter(id, name, x, y) {
+            return {
+                id, // 'fares' | 'maha'
+                name,
+                x,
+                y,
+                w: 36,
+                h: 50,
+                vx: 0,
+                vy: 0,
+                facing: 1, // 1 يمين، -1 يسار
+                grounded: false,
+                jumpsLeft: 2,
+                dashTimer: 0,
+                dashCooldown: 0,
+                slowTimer: 0,
+                walkCycle: 0,
+                trail: [],
+                // متغيرات الذكاء الاصطناعي للشخصية الهاربة
+                aiJumpCooldown: 0,
+                aiDropTimer: 0,
+                aiLookBackTimer: 0
+            };
+        }
+
+        /**
+         * بناء تضاريس المرحلة الحالية (أرضيات، فجوات، منصات متحركة، نوابض، عقبات، وقلوب)
+         */
+        function buildStageWorld(stageIdx) {
+            const cfg = STAGES[stageIdx];
+            const groundY = state.h - FLOOR_OFFSET;
+            const len = cfg.levelLength;
+
+            state.platforms = [];
+            state.springs = [];
+            state.obstacles = [];
+            state.collectibles = [];
+            state.particles = [];
+            state.heartsCollected = 0;
+
+            // 1. بناء الأرضية الرئيسية مع فجوات ممتعة للقفز
+            let cursorX = -100;
+            let segmentIndex = 0;
+            while (cursorX < len + 600) {
+                const segWidth = segmentIndex === 0 ? 750 : (420 + (segmentIndex % 3) * 160);
+                state.platforms.push({
+                    x: cursorX,
+                    y: groundY,
+                    w: segWidth,
+                    h: 140,
+                    type: 'ground'
+                });
+
+                // إضافة عقبات لطيفة (غيوم شوكية أو كتب متراكمة) على الأرضيات الطويلة
+                if (segmentIndex > 0 && segWidth > 460 && cursorX < len - 400) {
+                    const obsX = cursorX + segWidth * 0.55;
+                    state.obstacles.push({
+                        x: obsX,
+                        y: groundY - 28,
+                        w: 34,
+                        h: 28,
+                        type: stageIdx === 2 ? 'crystal' : 'cloud'
+                    });
+                }
+
+                // إضافة نابض قفز عالي أحياناً قبل الفجوات أو المنصات العالية
+                if (segmentIndex % 2 === 1 && cursorX + segWidth < len - 300) {
+                    state.springs.push({
+                        x: cursorX + segWidth - 52,
+                        y: groundY - 16,
+                        w: 34,
+                        h: 16,
+                        bounceAnim: 0
+                    });
+                }
+
+                cursorX += segWidth;
+                // فجوة آمنة وقابلة للقفز بسهولة
+                const gapWidth = cursorX < len - 250 ? (115 + (segmentIndex % 2) * 35) : 0;
+                cursorX += gapWidth;
+                segmentIndex++;
+            }
+
+            // 2. إضافة منصات علوية ثابتة ومتحركة على طول المسار
+            for (let px = 380; px < len - 250; px += 330) {
+                const tier = (Math.floor(px / 330) % 2 === 0) ? 115 : 195;
+                const isMoving = (stageIdx >= 1 && Math.floor(px / 330) % 3 === 1);
+                const platW = 135;
+                const platY = groundY - tier;
+
+                state.platforms.push({
+                    x: px,
+                    y: platY,
+                    w: platW,
+                    h: 18,
+                    type: isMoving ? 'moving' : 'floating',
+                    baseX: px,
+                    range: isMoving ? 65 : 0,
+                    phase: px * 0.01
+                });
+
+                // وضع قلوب ونجوم فوق كل منصة
+                state.collectibles.push({
+                    x: px + platW * 0.3,
+                    y: platY - 26,
+                    r: 12,
+                    isGold: false,
+                    collected: false,
+                    bob: px * 0.02
+                });
+                state.collectibles.push({
+                    x: px + platW * 0.7,
+                    y: platY - 26,
+                    r: 14,
+                    isGold: true, // قلب ذهبي يحمل رسالة حب
+                    collected: false,
+                    bob: px * 0.02 + 1
+                });
+            }
+
+            // 3. تهيئة موقعي فارس ومها
+            const chaserStartX = 140;
+            const runnerStartX = 460; // الشخصية الهاربة تبدأ متقدمة بمسافة حماسية
+
+            if (state.chaserRole === 'fares') {
+                state.fares = createCharacter('fares', 'فارس', chaserStartX, groundY - 60);
+                state.maha = createCharacter('maha', 'مها', runnerStartX, groundY - 60);
+            } else {
+                state.maha = createCharacter('maha', 'مها', chaserStartX, groundY - 60);
+                state.fares = createCharacter('fares', 'فارس', runnerStartX, groundY - 60);
+            }
+
+            state.cameraX = 0;
+            updateHud();
+        }
+
+        /**
+         * إظهار رسالة حب قصيرة في الأعلى عند التقاط قلب ذهبي
+         */
+        function showLoveToast(customText = null) {
+            const notesPool = state.chaserRole === 'fares' ? LOVE_NOTES_FROM_MAHA : LOVE_NOTES_FROM_FARES;
+            const msg = customText || notesPool[Math.floor(Math.random() * notesPool.length)];
+            quoteToastEl.textContent = msg;
+            quoteToastEl.classList.add('show');
+            clearTimeout(state.toastTimer);
+            state.toastTimer = setTimeout(() => {
+                quoteToastEl.classList.remove('show');
+            }, 2400);
+        }
+
+        /**
+         * توليد جزيئات احتفالية
+         */
+        function spawnParticles(x, y, color, count = 14, speedScale = 1) {
+            for (let i = 0; i < count; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const spd = (50 + Math.random() * 150) * speedScale;
+                state.particles.push({
+                    x, y,
+                    vx: Math.cos(a) * spd,
+                    vy: Math.sin(a) * spd - 40,
+                    life: 1,
+                    decay: 1.1 + Math.random() * 0.8,
+                    size: 2.5 + Math.random() * 3.5,
+                    color
+                });
+            }
+        }
+
+        /**
+         * ضبط أبعاد الكانفس بدقة Retina
+         */
+        function handleResize() {
+            state.dpr = Math.min(window.devicePixelRatio || 1, 2);
+            state.w = window.innerWidth;
+            state.h = window.innerHeight;
+            canvas.width = state.w * state.dpr;
+            canvas.height = state.h * state.dpr;
+            ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+
+            if (state.bgStars.length === 0) {
+                for (let i = 0; i < 85; i++) {
+                    state.bgStars.push({
+                        x: Math.random() * 2000,
+                        y: Math.random() * 600,
+                        r: 0.8 + Math.random() * 1.8,
+                        phase: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+        }
+
+        /**
+         * تنفيذ قفزة (عادية أو مزدوجة) للشخصية
+         */
+        function triggerJump(char) {
+            if (char.grounded) {
+                char.vy = -610;
+                char.grounded = false;
+                char.jumpsLeft = 1;
+                sfx.playJump(false);
+                spawnParticles(char.x + char.w / 2, char.y + char.h, '#ffffff', 8, 0.6);
+            } else if (char.jumpsLeft > 0) {
+                char.vy = -550;
+                char.jumpsLeft = 0;
+                sfx.playJump(true);
+                spawnParticles(char.x + char.w / 2, char.y + char.h, '#ff85c0', 12, 0.8);
+            }
+        }
+
+        /**
+         * تنفيذ اندفاع سريع (Dash) لتقليص المسافة
+         */
+        function triggerDash(char) {
+            if (char.dashCooldown > 0 || char.dashTimer > 0) return;
+            char.dashTimer = 0.22;
+            char.dashCooldown = 1.4;
+            sfx.playDash();
+            spawnParticles(char.x + char.w / 2, char.y + char.h / 2, '#fbbf24', 16, 1.1);
+        }
+
+        /**
+         * تحديث منطق الذكاء الاصطناعي للشخصية الهاربة (في نمط اللعب الفردي)
+         */
+        function updateRunnerAI(runner, chaser, dt) {
+            const cfg = STAGES[state.stageIdx];
+            const distAhead = runner.x - chaser.x;
+
+            // الشخصية الهاربة تنثر قلوباً صغيرة خلفها أثناء الركض
+            runner.aiDropTimer -= dt;
+            if (runner.aiDropTimer <= 0 && runner.x < cfg.levelLength - 200) {
+                runner.aiDropTimer = 1.65;
+                state.collectibles.push({
+                    x: runner.x + 10,
+                    y: runner.y + 18,
+                    r: 11,
+                    isGold: Math.random() < 0.32,
+                    collected: false,
+                    bob: 0
+                });
+            }
+
+            // تحديد سرعة الهروب بذكاء: تسرع إذا اقترب المطارد، وتبطئ وتلتفت بمرح إذا ابتعدت كثيراً
+            let targetSpeed = 275 + state.stageIdx * 18;
+            if (runner.x >= cfg.levelLength - 180) {
+                // عند نهاية المضمار تتوقف وتنتظر بابتسامة!
+                targetSpeed = 0;
+                runner.facing = -1;
+            } else if (distAhead > 440) {
+                targetSpeed = 135; // تبطئ قليلاً حتى لا تضيع من الشاشة
+                runner.aiLookBackTimer += dt;
+                if (Math.sin(runner.aiLookBackTimer * 4) > 0.4) {
+                    runner.facing = -1; // تلتفت للخلف بمرح
+                } else {
+                    runner.facing = 1;
+                }
+            } else {
+                runner.facing = 1;
+                if (distAhead < 140) {
+                    targetSpeed = 325 + state.stageIdx * 15; // تهرب بحماس عند الاقتراب!
+                }
+            }
+
+            runner.vx = targetSpeed;
+
+            // استشعار الفجوات والعقبات أمام الشخصية الهاربة للقفز فوقها برشاقة
+            runner.aiJumpCooldown = Math.max(0, runner.aiJumpCooldown - dt);
+            if (runner.grounded && runner.aiJumpCooldown <= 0 && targetSpeed > 0) {
+                const probeX = runner.x + runner.w + 55;
+                const footY = runner.y + runner.h + 12;
+
+                // هل توجد أرضية أمامها؟
+                let hasGroundAhead = false;
+                for (let i = 0; i < state.platforms.length; i++) {
+                    const p = state.platforms[i];
+                    if (probeX >= p.x && probeX <= p.x + p.w && Math.abs(p.y - (runner.y + runner.h)) < 45) {
+                        hasGroundAhead = true;
+                        break;
+                    }
+                }
+
+                // هل توجد عقبة قريبة أمامها؟
+                let hasObstacleAhead = false;
+                for (let i = 0; i < state.obstacles.length; i++) {
+                    const o = state.obstacles[i];
+                    if (o.x > runner.x && o.x - (runner.x + runner.w) < 85) {
+                        hasObstacleAhead = true;
+                        break;
+                    }
+                }
+
+                if (!hasGroundAhead || hasObstacleAhead) {
+                    triggerJump(runner);
+                    runner.aiJumpCooldown = 0.45;
+                }
+            }
+        }
+
+        /**
+         * تحديث فيزياء الحركة والتصادم لشخصية واحدة
+         */
+        function updateCharacterPhysics(char, dt, moveDir) {
+            const cfg = STAGES[state.stageIdx];
+
+            char.dashCooldown = Math.max(0, char.dashCooldown - dt);
+            char.slowTimer = Math.max(0, char.slowTimer - dt);
+
+            if (char.dashTimer > 0) {
+                char.dashTimer -= dt;
+                char.vx = char.facing * 680;
+                char.vy = 0;
+                if (Math.random() < 0.6) {
+                    spawnParticles(char.x + char.w / 2, char.y + char.h / 2, '#fbbf24', 1, 0.3);
+                }
+            } else if (moveDir !== null) {
+                // تحكم بشري مباشر
+                const baseSpeed = char.slowTimer > 0 ? 175 : 335;
+                if (moveDir !== 0) {
+                    char.vx = moveDir * baseSpeed;
+                    char.facing = moveDir;
+                } else {
+                    char.vx *= 0.78;
+                    if (Math.abs(char.vx) < 8) char.vx = 0;
+                }
+            }
+
+            // تطبيق الجاذبية
+            if (char.dashTimer <= 0) {
+                char.vy += GRAVITY * dt;
+            }
+
+            // الحركة الأفقية
+            char.x += char.vx * dt;
+            char.x = Math.max(20, Math.min(cfg.levelLength, char.x));
+
+            // الحركة العمودية وفحص التصادم مع المنصات (من الأعلى فقط كما في ماريو)
+            const prevBottom = char.y + char.h;
+            char.y += char.vy * dt;
+            char.grounded = false;
+
+            if (char.vy >= 0) {
+                for (let i = 0; i < state.platforms.length; i++) {
+                    const p = state.platforms[i];
+                    const withinX = (char.x + char.w - 6 > p.x) && (char.x + 6 < p.x + p.w);
+                    const newBottom = char.y + char.h;
+                    if (withinX && prevBottom <= p.y + 14 && newBottom >= p.y) {
+                        char.y = p.y - char.h;
+                        char.vy = 0;
+                        char.grounded = true;
+                        char.jumpsLeft = 2;
+                        if (p.type === 'moving' && p.dx) {
+                            char.x += p.dx;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // فحص النوابض (Spring Pads)
+            for (let i = 0; i < state.springs.length; i++) {
+                const sp = state.springs[i];
+                if (
+                    char.x + char.w > sp.x &&
+                    char.x < sp.x + sp.w &&
+                    char.y + char.h >= sp.y &&
+                    char.y + char.h <= sp.y + sp.h + 18 &&
+                    char.vy >= 0
+                ) {
+                    char.vy = -880;
+                    char.grounded = false;
+                    char.jumpsLeft = 1;
+                    sp.bounceAnim = 1;
+                    sfx.playSpring();
+                    spawnParticles(sp.x + sp.w / 2, sp.y, '#38bdf8', 14, 0.9);
+                }
+            }
+
+            // فحص العقبات اللطيفة (تبطئ قليلاً دون إنهاء اللعبة)
+            if (char.slowTimer <= 0 && char.dashTimer <= 0) {
+                for (let i = 0; i < state.obstacles.length; i++) {
+                    const ob = state.obstacles[i];
+                    if (
+                        char.x + char.w - 6 > ob.x &&
+                        char.x + 6 < ob.x + ob.w &&
+                        char.y + char.h - 4 > ob.y &&
+                        char.y + 6 < ob.y + ob.h
+                    ) {
+                        char.slowTimer = 1.1;
+                        char.vy = -260;
+                        sfx.playBump();
+                        spawnParticles(ob.x + ob.w / 2, ob.y, '#c084fc', 10, 0.6);
+                        break;
+                    }
+                }
+            }
+
+            // الإنقاذ التلقائي إذا سقط اللاعب في فجوة (يعود فوراً لأقرب منصة بلمسة سحرية)
+            if (char.y > state.h + 90) {
+                let safePlat = state.platforms[0];
+                for (let i = 0; i < state.platforms.length; i++) {
+                    const p = state.platforms[i];
+                    if (p.type === 'ground' && p.x <= char.x + 80) {
+                        safePlat = p;
+                    }
+                }
+                char.x = safePlat.x + 40;
+                char.y = safePlat.y - char.h - 20;
+                char.vy = 0;
+                char.jumpsLeft = 2;
+                spawnParticles(char.x + char.w / 2, char.y + char.h / 2, '#ff2e93', 16);
+            }
+
+            // تحديث دورة حركة الأقدام والذيل الضوئي
+            if (Math.abs(char.vx) > 15 && char.grounded) {
+                char.walkCycle += dt * 14;
+            } else {
+                char.walkCycle = 0;
+            }
+
+            char.trail.push({ x: char.x + char.w / 2, y: char.y + char.h / 2 });
+            if (char.trail.length > 10) char.trail.shift();
+        }
+
+        /**
+         * تحديث الشريط العلوي (المسافة بالأمتار وعدد القلوب)
+         */
+        function updateHud() {
+            const cfg = STAGES[state.stageIdx];
+            stageNameEl.textContent = cfg.name;
+            heartsCountEl.textContent = state.heartsCollected;
+
+            const chaser = state.chaserRole === 'fares' ? state.fares : state.maha;
+            const runner = state.chaserRole === 'fares' ? state.maha : state.fares;
+            const rawDist = Math.max(0, Math.round(Math.abs(runner.x - chaser.x) / 14));
+            distanceTextEl.textContent = rawDist;
+
+            // تحديث مظهر زر الاندفاع على الهاتف
+            const dashBtn = document.getElementById('btn-touch-dash');
+            if (dashBtn && chaser) {
+                if (chaser.dashCooldown > 0) dashBtn.classList.add('cooldown');
+                else dashBtn.classList.remove('cooldown');
+            }
+        }
+
+        /**
+         * عند الإمساك بالشخصية الأخرى والفوز بالمرحلة
+         */
+        function handleCatchVictory() {
+            if (state.status !== 'playing') return;
+            state.status = 'won';
+            sfx.playCatchVictory();
+
+            const midX = (state.fares.x + state.maha.x) / 2 + 18;
+            const midY = (state.fares.y + state.maha.y) / 2 + 20;
+            spawnParticles(midX, midY, '#ff2e93', 35, 1.4);
+            spawnParticles(midX, midY, '#fbbf24', 35, 1.4);
+
+            const cfg = STAGES[state.stageIdx];
+            const isFaresChaser = state.chaserRole === 'fares';
+
+            setTimeout(() => {
+                winBadgeEl.textContent = `🎉 المرحلة ${cfg.id} مكتملة! 🎉`;
+                winEmojiEl.textContent = isFaresChaser ? "👑💑👸" : "👸💑👑";
+                winTitleEl.textContent = isFaresChaser
+                    ? "فارس مسك مها! ❤️"
+                    : "مها مسكت فارس! 💖";
+                winPoemEl.innerHTML = isFaresChaser ? cfg.poemFaresWins : cfg.poemMahaWins;
+                winStatsEl.textContent = `جمعتما ${state.heartsCollected} قلباً في ${cfg.name} ✨`;
+
+                nextStageBtn.textContent = state.stageIdx + 1 < STAGES.length
+                    ? "الانتقال للمرحلة التالية 🌠"
+                    : "إعادة المغامرة من البداية 🏆";
+
+                winModal.classList.remove('lc-hidden');
+            }, 600);
+        }
+
+        /**
+         * ============================================================================
+         * 5. حلقة اللعبة الرئيسية (Update & Render 60 FPS)
+         * ============================================================================
+         */
+        function gameLoop(timestamp) {
+            if (!document.getElementById('love-chase-root')) {
+                if (state.animId) cancelAnimationFrame(state.animId);
+                return;
+            }
+
+            if (!state.lastTime) state.lastTime = timestamp;
+            const dt = Math.min((timestamp - state.lastTime) / 1000, 0.05);
+            state.lastTime = timestamp;
+
+            if (state.status === 'playing') {
+                // تحديث المنصات المتحركة
+                for (let i = 0; i < state.platforms.length; i++) {
+                    const p = state.platforms[i];
+                    if (p.type === 'moving') {
+                        const oldX = p.x;
+                        p.phase += dt * 1.8;
+                        p.x = p.baseX + Math.sin(p.phase) * p.range;
+                        p.dx = p.x - oldX;
+                    }
+                }
+
+                // تحديث نوابض القفز
+                for (let i = 0; i < state.springs.length; i++) {
+                    if (state.springs[i].bounceAnim > 0) {
+                        state.springs[i].bounceAnim = Math.max(0, state.springs[i].bounceAnim - dt * 4);
+                    }
+                }
+
+                const chaser = state.chaserRole === 'fares' ? state.fares : state.maha;
+                const runner = state.chaserRole === 'fares' ? state.maha : state.fares;
+
+                // قراءة مدخلات المطارد (اللاعب الأول)
+                let chaserDir = 0;
+                if (state.keys['ArrowRight'] || state.keys['d'] || state.keys['D'] || state.touch.right) chaserDir += 1;
+                if (state.keys['ArrowLeft'] || state.keys['a'] || state.keys['A'] || state.touch.left) chaserDir -= 1;
+                if (state.keys['Shift'] || state.touch.dash) triggerDash(chaser);
+
+                updateCharacterPhysics(chaser, dt, chaserDir);
+
+                // تحديث الشخصية الهاربة (ذكاء اصطناعي أو لاعب ثانٍ)
+                if (state.gameMode === 'solo') {
+                    updateRunnerAI(runner, chaser, dt);
+                    updateCharacterPhysics(runner, dt, null);
+                } else {
+                    // في نمط اللاعبين: فارس بالأسهم، ومها بـ WASD
+                    let p2Dir = 0;
+                    if (runner.id === 'maha') {
+                        if (state.keys['d'] || state.keys['D']) p2Dir += 1;
+                        if (state.keys['a'] || state.keys['A']) p2Dir -= 1;
+                    } else {
+                        if (state.keys['ArrowRight']) p2Dir += 1;
+                        if (state.keys['ArrowLeft']) p2Dir -= 1;
+                    }
+                    updateCharacterPhysics(runner, dt, p2Dir);
+                }
+
+                // فحص التقاط القلوب والنجوم للمطارد
+                for (let i = 0; i < state.collectibles.length; i++) {
+                    const c = state.collectibles[i];
+                    if (c.collected) continue;
+                    c.bob += dt * 4;
+                    const dist = Math.hypot((chaser.x + chaser.w / 2) - c.x, (chaser.y + chaser.h / 2) - c.y);
+                    if (dist < 32) {
+                        c.collected = true;
+                        state.heartsCollected += c.isGold ? 3 : 1;
+                        sfx.playHeart(c.isGold);
+                        spawnParticles(c.x, c.y, c.isGold ? '#fbbf24' : '#ff2e93', 14);
+                        if (c.isGold) showLoveToast();
+                    }
+                }
+
+                // فحص هل أمسك المطارد بالشخصية الأخرى؟
+                const catchDist = Math.hypot((chaser.x + chaser.w / 2) - (runner.x + runner.w / 2), (chaser.y + chaser.h / 2) - (runner.y + runner.h / 2));
+                if (catchDist < 42) {
+                    handleCatchVictory();
+                }
+
+                // تحريك الكاميرا بسلاسة لتتبع المطارد مع إظهار مساحة واسعة للأمام
+                const targetCamX = Math.max(0, chaser.x - state.w * 0.28);
+                state.cameraX += (targetCamX - state.cameraX) * Math.min(1, dt * 7);
+
+                updateHud();
+            }
+
+            // تحديث الجزيئات
+            for (let i = state.particles.length - 1; i >= 0; i--) {
+                const pt = state.particles[i];
+                pt.x += pt.vx * dt;
+                pt.y += pt.vy * dt;
+                pt.vy += 260 * dt;
+                pt.life -= pt.decay * dt;
+                if (pt.life <= 0) state.particles.splice(i, 1);
+            }
+
+            renderScene(timestamp);
+            state.animId = requestAnimationFrame(gameLoop);
+        }
+
+        /**
+         * ============================================================================
+         * 6. رسم المشهد الكامل على الكانفس
+         * ============================================================================
+         */
+        function renderScene(timestamp) {
+            const cfg = STAGES[state.stageIdx];
+
+            // 1. رسم السماء المتدرجة للمرحلة
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, state.h);
+            skyGrad.addColorStop(0, cfg.skyTop);
+            skyGrad.addColorStop(0.55, cfg.skyMid);
+            skyGrad.addColorStop(1, cfg.skyBot);
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, state.w, state.h);
+
+            // 2. رسم القمر المضيء والنجوم في الخلفية (Parallax)
+            ctx.save();
+            const moonX = state.w * 0.78 - state.cameraX * 0.04;
+            const moonY = state.h * 0.22;
+            const moonGlow = ctx.createRadialGradient(moonX, moonY, 10, moonX, moonY, 95);
+            moonGlow.addColorStop(0, 'rgba(254, 240, 138, 0.9)');
+            moonGlow.addColorStop(0.35, 'rgba(255, 46, 147, 0.25)');
+            moonGlow.addColorStop(1, 'rgba(255, 46, 147, 0)');
+            ctx.fillStyle = moonGlow;
+            ctx.beginPath();
+            ctx.arc(moonX, moonY, 95, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#fef9c3';
+            ctx.beginPath();
+            ctx.arc(moonX, moonY, 26, 0, Math.PI * 2);
+            ctx.fill();
+
+            // النجوم المتلألئة
+            for (let i = 0; i < state.bgStars.length; i++) {
+                const s = state.bgStars[i];
+                const sx = ((s.x - state.cameraX * 0.12) % state.w + state.w) % state.w;
+                const alpha = 0.3 + 0.6 * (0.5 + 0.5 * Math.sin(timestamp * 0.003 + s.phase));
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(sx, s.y % (state.h * 0.75), s.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // جبال وتلال خلفية ناعمة
+            ctx.fillStyle = 'rgba(15, 6, 34, 0.45)';
+            ctx.beginPath();
+            ctx.moveTo(0, state.h);
+            for (let x = 0; x <= state.w + 80; x += 80) {
+                const worldX = x + state.cameraX * 0.25;
+                const hillY = state.h - 140 - Math.sin(worldX * 0.004) * 55 - Math.cos(worldX * 0.009) * 30;
+                ctx.lineTo(x, hillY);
+            }
+            ctx.lineTo(state.w, state.h);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+
+            // بدء تحويل الكاميرا لعناصر العالم
+            ctx.save();
+            ctx.translate(-state.cameraX, 0);
+
+            // 3. رسم المنصات والأرضيات
+            for (let i = 0; i < state.platforms.length; i++) {
+                const p = state.platforms[i];
+                if (p.x + p.w < state.cameraX - 60 || p.x > state.cameraX + state.w + 60) continue;
+
+                ctx.fillStyle = cfg.groundColor;
+                ctx.beginPath();
+                ctx.roundRect(p.x, p.y, p.w, p.h, p.type === 'ground' ? 0 : 10);
+                ctx.fill();
+
+                // شريط علوي متوهج للمنصة
+                ctx.fillStyle = cfg.grassColor;
+                ctx.beginPath();
+                ctx.roundRect(p.x, p.y, p.w, 6, 6);
+                ctx.fill();
+            }
+
+            // 4. رسم نوابض القفز (Springs)
+            for (let i = 0; i < state.springs.length; i++) {
+                const sp = state.springs[i];
+                const stretch = sp.bounceAnim * 10;
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+                ctx.roundRect(sp.x, sp.y - stretch, sp.w, sp.h + stretch, 6);
+                ctx.fill();
+                ctx.fillStyle = '#fde68a';
+                ctx.fillRect(sp.x + 4, sp.y - stretch, sp.w - 8, 4);
+            }
+
+            // 5. رسم العقبات اللطيفة
+            for (let i = 0; i < state.obstacles.length; i++) {
+                const ob = state.obstacles[i];
+                ctx.save();
+                ctx.fillStyle = '#a855f7';
+                ctx.shadowColor = '#c084fc';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.moveTo(ob.x, ob.y + ob.h);
+                ctx.lineTo(ob.x + ob.w * 0.25, ob.y);
+                ctx.lineTo(ob.x + ob.w * 0.5, ob.y + ob.h * 0.5);
+                ctx.lineTo(ob.x + ob.w * 0.75, ob.y);
+                ctx.lineTo(ob.x + ob.w, ob.y + ob.h);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // 6. رسم القلوب والنجوم القابلة للجمع
+            for (let i = 0; i < state.collectibles.length; i++) {
+                const c = state.collectibles[i];
+                if (c.collected) continue;
+                if (c.x < state.cameraX - 40 || c.x > state.cameraX + state.w + 40) continue;
+
+                const offsetY = Math.sin(c.bob) * 5;
+                drawHeartShape(c.x, c.y + offsetY, c.r, c.isGold ? '#fbbf24' : '#ff2e93');
+            }
+
+            // 7. رسم الشخصيتين (فارس ومها) بوضوح وجمال
+            if (state.fares && state.maha) {
+                drawHeroCharacter(state.fares);
+                drawHeroCharacter(state.maha);
+            }
+
+            // 8. رسم الجزيئات
+            for (let i = 0; i < state.particles.length; i++) {
+                const pt = state.particles[i];
+                ctx.globalAlpha = Math.max(0, pt.life);
+                ctx.fillStyle = pt.color;
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            ctx.restore();
+        }
+
+        /**
+         * رسم قلب متوهج
+         */
+        function drawHeartShape(x, y, size, color) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.fillStyle = color;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 14;
+            ctx.beginPath();
+            ctx.moveTo(0, size * 0.35);
+            ctx.bezierCurveTo(-size, -size * 0.4, -size * 0.5, -size * 1.1, 0, -size * 0.45);
+            ctx.bezierCurveTo(size * 0.5, -size * 1.1, size, -size * 0.4, 0, size * 0.35);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        /**
+         * رسم شخصية فارس أو مها بأسلوب منصات كرتوني جذاب مع الاسم والتاج
+         */
+        function drawHeroCharacter(char) {
+            const isFares = char.id === 'fares';
+            const mainColor = isFares ? '#38bdf8' : '#ff2e93';
+            const accentColor = isFares ? '#fbbf24' : '#f472b6';
+
+            // رسم ذيل ضوئي خلف الشخصية
+            for (let i = 0; i < char.trail.length; i++) {
+                const t = char.trail[i];
+                const ratio = (i + 1) / char.trail.length;
+                ctx.fillStyle = mainColor;
+                ctx.globalAlpha = ratio * 0.22;
+                ctx.beginPath();
+                ctx.arc(t.x, t.y, 12 * ratio, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            ctx.save();
+            const cx = char.x + char.w / 2;
+            const cy = char.y + char.h / 2;
+
+            // الاسم والتاج فوق الرأس
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 13px system-ui, sans-serif';
+            ctx.fillStyle = isFares ? '#fde68a' : '#fbcfe8';
+            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+            ctx.shadowBlur = 6;
+            ctx.fillText(isFares ? '👑 فارس' : '👸 مها', cx, char.y - 10);
+            ctx.shadowBlur = 0;
+
+            // انعكاس أفقي حسب اتجاه الركض
+            ctx.translate(cx, cy);
+            ctx.scale(char.facing, 1);
+
+            // الأقدام المتحركة أثناء الركض
+            const legSwing = Math.sin(char.walkCycle) * 7;
+            ctx.fillStyle = '#1e1b4b';
+            ctx.beginPath();
+            ctx.roundRect(-10 + legSwing, 12, 8, 13, 4);
+            ctx.roundRect(2 - legSwing, 12, 8, 13, 4);
+            ctx.fill();
+
+            // الجسم (سترة فارس الزرقاء الذهبية / فستان مها الوردي)
+            ctx.fillStyle = mainColor;
+            ctx.beginPath();
+            ctx.roundRect(-13, -4, 26, 20, 8);
+            ctx.fill();
+
+            // وشاح أو قلب على الصدر
+            ctx.fillStyle = accentColor;
+            ctx.beginPath();
+            ctx.arc(2, 5, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // الرأس
+            ctx.fillStyle = '#fde68a';
+            ctx.beginPath();
+            ctx.arc(0, -13, 12, 0, Math.PI * 2);
+            ctx.fill();
+
+            // الشعر والنظارات لـ فارس (أبو أهل العلم والنظارات!) أو شعر مها الطويل
+            if (isFares) {
+                ctx.fillStyle = '#1e1b4b';
+                ctx.beginPath();
+                ctx.arc(-1, -16, 12, Math.PI, Math.PI * 2);
+                ctx.fill();
+                // نظارات فارس الأنيقة
+                ctx.strokeStyle = '#1e1b4b';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(2, -16, 7, 5);
+            } else {
+                // شعر مها المنسدل
+                ctx.fillStyle = '#2e1065';
+                ctx.beginPath();
+                ctx.arc(-3, -14, 13, Math.PI * 0.7, Math.PI * 2.1);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.roundRect(-15, -14, 9, 22, 5);
+                ctx.fill();
+                // عين مها اللامعة
+                ctx.fillStyle = '#1e1b4b';
+                ctx.beginPath();
+                ctx.arc(5, -13, 2.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        /**
+         * ============================================================================
+         * 7. ربط أحداث الواجهة واللمس المتعدد ولوحة المفاتيح
+         * ============================================================================
+         */
+        function startChaseWithRole(role) {
+            sfx.init();
+            state.chaserRole = role;
+            state.stageIdx = 0;
+            startModal.classList.add('lc-hidden');
+            winModal.classList.add('lc-hidden');
+            touchLayer.classList.remove('lc-hidden');
+            buildStageWorld(0);
+            state.status = 'playing';
+            showLoveToast(role === 'fares' ? "🏃‍♂️ انطلق يا فارس والحق بـ مها!" : "🏃‍♀️ انطلقي يا مها والحقي بـ فارس!");
+        }
+
+        modeSoloBtn.addEventListener('click', () => {
+            state.gameMode = 'solo';
+            modeSoloBtn.classList.add('active');
+            modeDuoBtn.classList.remove('active');
+            controlsHintEl.innerHTML = '📱 <b>الهاتف:</b> أزرار لمس متعددة (قفز مزدوج + اندفاع ⚡)<br>💻 <b>الكمبيوتر:</b> الأسهم أو WASD للتحرك والقفز، و Shift للاندفاع';
+        });
+
+        modeDuoBtn.addEventListener('click', () => {
+            state.gameMode = 'duo';
+            modeDuoBtn.classList.add('active');
+            modeSoloBtn.classList.remove('active');
+            controlsHintEl.innerHTML = '👫 <b>نمط اللاعبين:</b> فارس يتحرك بالأسهم، ومها تتحرك بأزرار W A S D!';
+        });
+
+        pickFaresBtn.addEventListener('click', () => startChaseWithRole('fares'));
+        pickMahaBtn.addEventListener('click', () => startChaseWithRole('maha'));
+
+        nextStageBtn.addEventListener('click', () => {
+            winModal.classList.add('lc-hidden');
+            const nextIdx = (state.stageIdx + 1) % STAGES.length;
+            buildStageWorld(nextIdx);
+            state.status = 'playing';
+        });
+
+        switchSideBtn.addEventListener('click', () => {
+            winModal.classList.add('lc-hidden');
+            state.chaserRole = state.chaserRole === 'fares' ? 'maha' : 'fares';
+            buildStageWorld(state.stageIdx);
+            state.status = 'playing';
+            showLoveToast("🔁 تم تبديل الأدوار!");
+        });
+
+        swapRoleBtn.addEventListener('click', () => {
+            if (state.status !== 'playing') return;
+            state.chaserRole = state.chaserRole === 'fares' ? 'maha' : 'fares';
+            buildStageWorld(state.stageIdx);
+            showLoveToast("🔁 تم تبديل الأدوار!");
+        });
+
+        restartBtn.addEventListener('click', () => {
+            if (state.status === 'playing') {
+                buildStageWorld(state.stageIdx);
+            }
+        });
+
+        soundBtn.addEventListener('click', () => {
+            sfx.muted = !sfx.muted;
+            soundBtn.textContent = sfx.muted ? '🔇' : '🔊';
+        });
+
+        // لوحة المفاتيح
+        window.addEventListener('keydown', (e) => {
+            state.keys[e.key] = true;
+            if (state.status !== 'playing') return;
+
+            const chaser = state.chaserRole === 'fares' ? state.fares : state.maha;
+            const runner = state.chaserRole === 'fares' ? state.maha : state.fares;
+
+            if (state.gameMode === 'solo') {
+                if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') {
+                    triggerJump(chaser);
+                }
+                if (e.key === 'Shift') {
+                    triggerDash(chaser);
+                }
+            } else {
+                // تحكم منفصل للاعبين
+                if (e.key === 'ArrowUp') triggerJump(state.fares);
+                if (e.key === 'w' || e.key === 'W') triggerJump(state.maha);
+                if (e.key === 'Shift') triggerDash(chaser);
+                if (e.key === 'e' || e.key === 'E') triggerDash(runner);
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            state.keys[e.key] = false;
+        });
+
+        // ربط أزرار اللمس المتعدد (Multi-Touch Pointer Events)
+        function bindTouchControl(btnId, propName, onPressAction = null) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+
+            const press = (e) => {
+                e.preventDefault();
+                sfx.init();
+                state.touch[propName] = true;
+                btn.classList.add('active');
+                if (onPressAction && state.status === 'playing') {
+                    const chaser = state.chaserRole === 'fares' ? state.fares : state.maha;
+                    onPressAction(chaser);
+                }
+            };
+
+            const release = (e) => {
+                e.preventDefault();
+                state.touch[propName] = false;
+                btn.classList.remove('active');
+            };
+
+            btn.addEventListener('pointerdown', press);
+            btn.addEventListener('pointerup', release);
+            btn.addEventListener('pointerleave', release);
+            btn.addEventListener('pointercancel', release);
+        }
+
+        bindTouchControl('btn-touch-left', 'left');
+        bindTouchControl('btn-touch-right', 'right');
+        bindTouchControl('btn-touch-jump', 'jump', (chaser) => triggerJump(chaser));
+        bindTouchControl('btn-touch-dash', 'dash', (chaser) => triggerDash(chaser));
+
+        window.addEventListener('resize', handleResize);
+        handleResize();
+        state.animId = requestAnimationFrame(gameLoop);
+    })();
+</script>
+</body>
+</html>
