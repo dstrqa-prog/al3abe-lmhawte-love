@@ -87,6 +87,137 @@
             background: rgba(236, 72, 153, 0.5);
             border-radius: 10px;
         }
+
+        /* === شاشة ملء الشاشة الإجباري === */
+        #fullscreen-gate {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: linear-gradient(135deg, #090514 0%, #1a0626 50%, #2e093d 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #fullscreen-gate .gate-card {
+            max-width: 480px;
+            width: 100%;
+            padding: 32px 24px;
+            border-radius: 28px;
+            background: rgba(18, 9, 38, 0.92);
+            border: 1.5px solid rgba(236, 72, 153, 0.55);
+            box-shadow: 0 20px 60px rgba(236, 72, 153, 0.25), 0 0 0 1px rgba(255,255,255,0.05) inset;
+            animation: pulseGlow 3s infinite ease-in-out;
+        }
+
+        #fullscreen-gate .gate-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            display: block;
+            animation: rotateHint 2.5s infinite ease-in-out;
+        }
+
+        @keyframes rotateHint {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+
+        #fullscreen-gate h2 {
+            font-family: 'Amiri', serif;
+            font-size: 28px;
+            background: linear-gradient(90deg, #f9a8d4, #fde047, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+
+        #fullscreen-gate p {
+            color: #c4b5fd;
+            font-size: 15px;
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+
+        #btn-enter-game {
+            width: 100%;
+            padding: 16px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #db2777, #ec4899, #a855f7);
+            color: #fff;
+            font-weight: 800;
+            font-size: 17px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(236, 72, 153, 0.4);
+            transition: transform 0.15s, box-shadow 0.15s;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        #btn-enter-game:active {
+            transform: scale(0.97);
+            box-shadow: 0 5px 15px rgba(236, 72, 153, 0.5);
+        }
+
+        #fullscreen-gate .gate-hint {
+            font-size: 12px;
+            color: #a78bfa;
+            margin-top: 14px;
+            opacity: 0.8;
+        }
+
+        /* === تنبيه تدوير الجهاز (يظهر فقط في الوضع العمودي على الجوال) === */
+        #rotate-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #090514;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+        }
+
+        #rotate-overlay.show {
+            display: flex;
+        }
+
+        #rotate-overlay .rotate-icon {
+            font-size: 72px;
+            margin-bottom: 20px;
+            animation: rotatePhone 2s infinite ease-in-out;
+        }
+
+        @keyframes rotatePhone {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+
+        #rotate-overlay h3 {
+            font-family: 'Amiri', serif;
+            font-size: 26px;
+            color: #f9a8d4;
+            margin-bottom: 10px;
+        }
+
+        #rotate-overlay p {
+            color: #c4b5fd;
+            font-size: 15px;
+            line-height: 1.6;
+            max-width: 320px;
+        }
+
+        @media (orientation: landscape) {
+            #rotate-overlay { display: none !important; }
+        }
+
+        @media (min-width: 900px) {
+            #rotate-overlay { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -326,6 +457,29 @@
         </div>
     </div>
 
+    <!-- شاشة ملء الشاشة الإجباري -->
+    <div id="fullscreen-gate">
+        <div class="gate-card">
+            <span class="gate-icon">📱🔄</span>
+            <h2>جهّزي شاشتك يا مها!</h2>
+            <p>
+                للحصول على أفضل تجربة لعب، سيتم تفعيل<br>
+                <strong style="color:#fde047;">ملء الشاشة</strong> و
+                <strong style="color:#fde047;">الوضع الأفقي</strong><br>
+                تلقائياً عند الضغط على الزر أدناه ✨
+            </p>
+            <button id="btn-enter-game">ابدأ المغامرة بالوضع الكامل 🚀</button>
+            <div class="gate-hint">💡 إن لم يُفعّل ملء الشاشة، سيتم تشغيل اللعبة عادياً</div>
+        </div>
+    </div>
+
+    <!-- تنبيه تدوير الجهاز -->
+    <div id="rotate-overlay">
+        <div class="rotate-icon">📱</div>
+        <h3>لفّي جوالك أفقياً</h3>
+        <p>اللعبة مصممة للوضع الأفقي (Landscape) للحصول على أفضل تجربة يا أميرتي 💖</p>
+    </div>
+
     <script>
         (function () {
             /**
@@ -483,7 +637,7 @@
                     skyBottom: "#1e1b4b",
                     accentColor: "#38bdf8",
                     platformFill: "#1e293b",
-                    windX: -0.35, // نسيم سماوي خفيف يضيف تحدياً لطيفاً
+                    windX: -0.35,
                     hasKey: false
                 },
                 {
@@ -527,8 +681,8 @@
             const JUMP_FORCE = -12.3;
             const DOUBLE_JUMP_FORCE = -10.8;
             const DASH_SPEED = 13.5;
-            const DASH_DURATION = 11; // إطارات
-            const DASH_COOLDOWN = 42; // إطارات
+            const DASH_DURATION = 11;
+            const DASH_COOLDOWN = 42;
 
             let scaleFactor = 1;
             let viewWidth = 1000;
@@ -540,7 +694,6 @@
                 jumpPressed: false
             };
 
-            // تقدم اللاعب في الذاكرة (بدون الاعتماد على localStorage لتفادي أي قيود بيئية)
             const progress = {
                 unlockedStage: 1,
                 stageStars: { 1: 0, 2: 0, 3: 0, 4: 0 },
@@ -548,7 +701,7 @@
             };
 
             const gameState = {
-                mode: 'start', // 'start' | 'playing' | 'memory' | 'stageClear' | 'gameover' | 'victory'
+                mode: 'start',
                 currentStageId: 1,
                 levelWidth: 3600,
                 cameraX: 0,
@@ -579,7 +732,6 @@
                 animFrame: 0
             };
 
-            // كيانات المرحلة النشطة
             let platforms = [];
             let spikes = [];
             let enemies = [];
@@ -634,9 +786,6 @@
                 particles = [];
 
                 if (stageId === 1) {
-                    // ------------------------------------------------------------------
-                    // المرحلة 1: حديقة البدايات (بداية القصة - منصات متدرجة وتحديات لطيفة)
-                    // ------------------------------------------------------------------
                     gameState.levelWidth = 3500;
                     platforms = [
                         { x: 0, y: GROUND_Y, w: 780, h: 150, type: 'ground' },
@@ -646,7 +795,7 @@
 
                         { x: 260, y: 415, w: 150, h: 24, type: 'solid' },
                         { x: 480, y: 330, w: 160, h: 24, type: 'solid' },
-                        { x: 740, y: 245, w: 130, h: 24, type: 'solid' }, // نجمة 1 عالية
+                        { x: 740, y: 245, w: 130, h: 24, type: 'solid' },
 
                         { x: 1050, y: 410, w: 150, h: 24, type: 'solid' },
                         { x: 1290, y: 325, w: 160, h: 24, type: 'solid' },
@@ -658,7 +807,6 @@
                         { x: 2860, y: 380, w: 170, h: 24, type: 'solid' }
                     ];
 
-                    // عدو واحد بسيط للتدريب على القفز فوقه
                     enemies = [
                         { x: 1250, y: GROUND_Y - 34, minX: 980, maxX: 1560, vx: 1.6, alive: true, squashTimer: 0 }
                     ];
@@ -667,7 +815,6 @@
                         { x: 1660, y: GROUND_Y, activated: false }
                     ];
 
-                    // 3 نجوم ذهبية سرية
                     stars = [
                         { x: 805, y: 195, collected: false, phase: 0 },
                         { x: 1370, y: 270, collected: false, phase: 1.5 },
@@ -686,26 +833,19 @@
                     stageGoal = { x: 3260, y: GROUND_Y - 120, w: 70, h: 120, isCastle: false };
 
                 } else if (stageId === 2) {
-                    // ------------------------------------------------------------------
-                    // المرحلة 2: جسر النجوم العائم (منصات متحركة + منصات تختفي بعد 1.5 ثانية)
-                    // ------------------------------------------------------------------
                     gameState.levelWidth = 3900;
                     platforms = [
                         { x: 0, y: GROUND_Y, w: 520, h: 150, type: 'ground' },
-                        // منصات متحركة أفقياً وعمودياً
                         { x: 600, y: 450, w: 140, h: 22, type: 'moving', startX: 600, startY: 450, rangeX: 160, rangeY: 0, speed: 0.025, phase: 0, dx: 0, dy: 0 },
                         { x: 960, y: 380, w: 140, h: 22, type: 'moving', startX: 960, startY: 380, rangeX: 0, rangeY: 110, speed: 0.03, phase: 1, dx: 0, dy: 0 },
 
-                        // منصات تتلاشى بعد الوقوف عليها بـ 1.5 ثانية (90 إطار)
                         { x: 1220, y: 330, w: 130, h: 22, type: 'crumbling', timer: 0, maxTimer: 90, broken: false, respawnTimer: 0 },
                         { x: 1430, y: 280, w: 130, h: 22, type: 'crumbling', timer: 0, maxTimer: 90, broken: false, respawnTimer: 0 },
                         { x: 1640, y: 340, w: 130, h: 22, type: 'crumbling', timer: 0, maxTimer: 90, broken: false, respawnTimer: 0 },
 
-                        // جزيرة استراحة ونقطة حفظ
                         { x: 1870, y: GROUND_Y, w: 480, h: 150, type: 'ground' },
                         { x: 2020, y: 380, w: 160, h: 24, type: 'solid' },
 
-                        // سلسلة منصات سماوية متقدمة
                         { x: 2450, y: 440, w: 145, h: 22, type: 'moving', startX: 2450, startY: 440, rangeX: 180, rangeY: 0, speed: 0.032, phase: 0.5, dx: 0, dy: 0 },
                         { x: 2830, y: 360, w: 130, h: 22, type: 'crumbling', timer: 0, maxTimer: 90, broken: false, respawnTimer: 0 },
                         { x: 3050, y: 290, w: 130, h: 22, type: 'crumbling', timer: 0, maxTimer: 90, broken: false, respawnTimer: 0 },
@@ -740,9 +880,6 @@
                     stageGoal = { x: 3710, y: GROUND_Y - 120, w: 70, h: 120, isCastle: false };
 
                 } else if (stageId === 3) {
-                    // ------------------------------------------------------------------
-                    // المرحلة 3: كهف الكريستال والظلال (أشواك + أعداء + مفتاح وبوابة سحرية)
-                    // ------------------------------------------------------------------
                     gameState.levelWidth = 4200;
                     platforms = [
                         { x: 0, y: GROUND_Y, w: 920, h: 150, type: 'ground' },
@@ -750,14 +887,13 @@
                         { x: 2150, y: GROUND_Y, w: 950, h: 150, type: 'ground' },
                         { x: 3230, y: GROUND_Y, w: 970, h: 150, type: 'ground' },
 
-                        // منصات داخل الكهف
                         { x: 280, y: 410, w: 150, h: 24, type: 'solid' },
                         { x: 520, y: 320, w: 160, h: 24, type: 'solid' },
                         { x: 770, y: 240, w: 140, h: 24, type: 'solid' },
 
                         { x: 1180, y: 400, w: 160, h: 24, type: 'solid' },
                         { x: 1450, y: 310, w: 170, h: 24, type: 'solid' },
-                        { x: 1730, y: 230, w: 150, h: 24, type: 'solid' }, // مكان المفتاح الذهبي!
+                        { x: 1730, y: 230, w: 150, h: 24, type: 'solid' },
 
                         { x: 2320, y: 405, w: 160, h: 24, type: 'solid' },
                         { x: 2580, y: 315, w: 170, h: 24, type: 'solid' },
@@ -766,7 +902,6 @@
                         { x: 3380, y: 390, w: 170, h: 24, type: 'solid' }
                     ];
 
-                    // أشواك كريستالية حادة (تُفقد قلباً عند لمسها)
                     spikes = [
                         { x: 430, y: GROUND_Y - 22, w: 66, h: 22, dir: 'up' },
                         { x: 1350, y: GROUND_Y - 22, w: 88, h: 22, dir: 'up' },
@@ -774,7 +909,6 @@
                         { x: 3440, y: GROUND_Y - 22, w: 66, h: 22, dir: 'up' }
                     ];
 
-                    // كرات ظل / غيوم حسد متحركة
                     enemies = [
                         { x: 720, y: GROUND_Y - 34, minX: 540, maxX: 870, vx: 2.2, alive: true, squashTimer: 0 },
                         { x: 1750, y: GROUND_Y - 34, minX: 1520, maxX: 1960, vx: -2.5, alive: true, squashTimer: 0 },
@@ -786,7 +920,6 @@
                         { x: 2210, y: GROUND_Y, activated: false }
                     ];
 
-                    // المفتاح السحري والبوابة المغلقة التي تحرس صندوق الذكرى ونهاية المرحلة
                     magicKey = { x: 1805, y: 180, collected: false, phase: 0 };
                     magicDoor = { x: 3630, y: GROUND_Y - 150, w: 34, h: 150 };
 
@@ -808,32 +941,25 @@
                     stageGoal = { x: 3980, y: GROUND_Y - 120, w: 70, h: 120, isCastle: false };
 
                 } else {
-                    // ------------------------------------------------------------------
-                    // المرحلة 4: قلعة اللقاء الأبدي (المزيج الأصعب + لقاء فارس عند القلعة!)
-                    // ------------------------------------------------------------------
                     gameState.levelWidth = 4700;
                     platforms = [
                         { x: 0, y: GROUND_Y, w: 680, h: 150, type: 'ground' },
                         { x: 290, y: 410, w: 150, h: 24, type: 'solid' },
                         { x: 520, y: 320, w: 140, h: 24, type: 'solid' },
 
-                        // جسر متحرك ومتلاشي فوق الهاوية
                         { x: 770, y: 360, w: 135, h: 22, type: 'moving', startX: 770, startY: 360, rangeX: 140, rangeY: 0, speed: 0.032, phase: 0, dx: 0, dy: 0 },
                         { x: 1090, y: 300, w: 125, h: 22, type: 'crumbling', timer: 0, maxTimer: 85, broken: false, respawnTimer: 0 },
                         { x: 1300, y: 360, w: 135, h: 22, type: 'moving', startX: 1300, startY: 360, rangeX: 0, rangeY: 95, speed: 0.035, phase: 1.2, dx: 0, dy: 0 },
 
-                        // ساحة الحرس الملكي (أعداء + أشواك + مفتاح القلعة)
                         { x: 1550, y: GROUND_Y, w: 1120, h: 150, type: 'ground' },
                         { x: 1750, y: 400, w: 160, h: 24, type: 'solid' },
                         { x: 2010, y: 305, w: 160, h: 24, type: 'solid' },
-                        { x: 2270, y: 215, w: 150, h: 24, type: 'solid' }, // المفتاح الملكي بالاعلى!
+                        { x: 2270, y: 215, w: 150, h: 24, type: 'solid' },
                         { x: 2470, y: 380, w: 150, h: 24, type: 'solid' },
 
-                        // الجسر الأخير المؤدي لبوابة القلعة
                         { x: 2770, y: 430, w: 130, h: 22, type: 'crumbling', timer: 0, maxTimer: 85, broken: false, respawnTimer: 0 },
                         { x: 2990, y: 360, w: 140, h: 22, type: 'moving', startX: 2990, startY: 360, rangeX: 160, rangeY: 0, speed: 0.036, phase: 0.6, dx: 0, dy: 0 },
 
-                        // أرضية القلعة الملكية
                         { x: 3360, y: GROUND_Y, w: 1340, h: 150, type: 'ground' },
                         { x: 3560, y: 390, w: 170, h: 24, type: 'solid' }
                     ];
@@ -878,7 +1004,6 @@
                     stageGoal = { x: 4340, y: GROUND_Y - 220, w: 230, h: 220, isCastle: true };
                 }
 
-                // توليد عناصر الخلفية المناسبة للمرحلة
                 bgDecor = [];
                 for (let i = 0; i < 75; i++) {
                     bgDecor.push({
@@ -914,7 +1039,6 @@
                 document.getElementById('hud-stage-icon').textContent = meta.icon;
                 document.getElementById('hud-stage-name').textContent = `المرحلة ${meta.id}: ${meta.name}`;
 
-                // رسم القلوب الثلاثة
                 const heartsHtml = [];
                 for (let i = 0; i < 3; i++) {
                     heartsHtml.push(i < gameState.lives ? '<span>❤️</span>' : '<span class="opacity-30">🖤</span>');
@@ -1037,9 +1161,6 @@
                 spawnParticles(player.x + player.w / 2, player.y + player.h / 2, ['#fbbf24', '#38bdf8', '#f472b6'], 14, 1.1);
             }
 
-            /**
-             * معالجة فقدان قلب أو السقوط
-             */
             function damagePlayer(fromPit = false) {
                 if (!fromPit && player.invulnTimer > 0) return;
 
@@ -1057,13 +1178,12 @@
                     return;
                 }
 
-                // العودة لآخر نقطة حفظ آمنة
                 player.x = gameState.checkpoint.x;
                 player.y = gameState.checkpoint.y;
                 player.vx = 0;
                 player.vy = 0;
                 player.dashTimer = 0;
-                player.invulnTimer = 75; // حماية مؤقتة لثانية وربع
+                player.invulnTimer = 75;
                 spawnParticles(player.x + player.w / 2, player.y + player.h / 2, ['#ec4899', '#a855f7'], 16, 1);
             }
 
@@ -1076,7 +1196,6 @@
                 gameState.time += 0.04;
                 if (gameState.screenShake > 0) gameState.screenShake--;
 
-                // تحديث الجزيئات
                 for (let i = particles.length - 1; i >= 0; i--) {
                     const p = particles[i];
                     p.x += p.vx;
@@ -1086,7 +1205,6 @@
                     if (p.life <= 0) particles.splice(i, 1);
                 }
 
-                // ألعاب نارية مستمرة عند الفوز النهائي
                 if (gameState.mode === 'victory' && Math.random() < 0.16) {
                     const fxX = gameState.cameraX + 100 + Math.random() * (viewWidth - 200);
                     const fxY = 90 + Math.random() * 240;
@@ -1097,7 +1215,6 @@
 
                 const meta = STAGES_META[gameState.currentStageId - 1];
 
-                // تحديث المنصات المتحركة والمتلاشية
                 for (const plat of platforms) {
                     if (plat.type === 'moving') {
                         const prevX = plat.x;
@@ -1117,24 +1234,21 @@
                             plat.timer++;
                             if (plat.timer >= plat.maxTimer) {
                                 plat.broken = true;
-                                plat.respawnTimer = 180; // تعود بعد 3 ثوانٍ
+                                plat.respawnTimer = 180;
                                 spawnParticles(plat.x + plat.w / 2, plat.y + 10, ['#38bdf8', '#c084fc'], 12, 0.8);
                             }
                         }
                     }
                 }
 
-                // نقل مها مع المنصة المتحركة إذا كانت تقف عليها
                 if (player.onGround && player.standingPlatform && player.standingPlatform.type === 'moving') {
                     player.x += player.standingPlatform.dx;
                     player.y += player.standingPlatform.dy;
                 }
 
-                // مؤقتات الحماية والاندفاع
                 if (player.invulnTimer > 0) player.invulnTimer--;
                 if (player.dashCooldown > 0) player.dashCooldown--;
 
-                // الحركة الأفقية أو الاندفاع السريع
                 if (player.dashTimer > 0) {
                     player.dashTimer--;
                     player.vx = player.facing * DASH_SPEED;
@@ -1157,7 +1271,6 @@
                         player.animFrame = 0;
                     }
 
-                    // تطبيق نسيم المرحلة 2 الخفيف أثناء القفز
                     if (!player.onGround && meta.windX !== 0) {
                         player.vx += meta.windX;
                     }
@@ -1167,25 +1280,21 @@
                 if (player.x < 10) player.x = 10;
                 if (player.x > gameState.levelWidth - player.w - 20) player.x = gameState.levelWidth - player.w - 20;
 
-                // التصادم الأفقي مع البوابة السحرية المغلقة
                 if (magicDoor && !gameState.doorOpened) {
                     const overlapY = player.y + player.h > magicDoor.y && player.y < magicDoor.y + magicDoor.h;
                     if (overlapY && player.x + player.w > magicDoor.x && player.x < magicDoor.x + magicDoor.w) {
                         if (gameState.hasKey) {
-                            // فتح البوابة بالمفتاح الذهبي!
                             gameState.doorOpened = true;
                             sfx.openDoor();
                             updateHUD();
                             spawnParticles(magicDoor.x + 17, magicDoor.y + 75, ['#fbbf24', '#ec4899', '#ffffff'], 28, 1.3);
                         } else {
-                            // منع المرور حتى تجد مها المفتاح
                             player.x = magicDoor.x - player.w;
                             player.vx = 0;
                         }
                     }
                 }
 
-                // الجاذبية والحركة العمودية
                 if (player.dashTimer <= 0) {
                     if (player.onGround) {
                         player.coyoteTimer = 7;
@@ -1202,7 +1311,6 @@
                 player.onGround = false;
                 player.standingPlatform = null;
 
-                // التصادم مع المنصات
                 for (const plat of platforms) {
                     if (plat.type === 'crumbling' && plat.broken) continue;
                     const withinX = player.x + player.w - 6 > plat.x && player.x + 6 < plat.x + plat.w;
@@ -1213,17 +1321,14 @@
                         player.standingPlatform = plat;
                         player.jumpsRemaining = 2;
 
-                        // بدء عداد التلاشي عند الوقوف على منصة متلاشية
                         if (plat.type === 'crumbling' && plat.timer === 0) {
                             plat.timer = 1;
                         }
                     }
                 }
 
-                // تحديث وقت السماح بالقفز على المنصات المتحركة
                 if (player.onGround) player.coyoteTimer = 7;
 
-                // التصادم مع الأشواك
                 for (const sp of spikes) {
                     if (
                         player.x + player.w - 7 > sp.x &&
@@ -1236,7 +1341,6 @@
                     }
                 }
 
-                // تحديث الأعداء (غيوم الحسد / كرات الظل) والقتال على طريقة ماريو
                 for (const en of enemies) {
                     if (!en.alive) {
                         if (en.squashTimer > 0) en.squashTimer--;
@@ -1254,16 +1358,14 @@
                     const overlapY = player.y + player.h > en.y && player.y < en.y + enH;
 
                     if (overlapX && overlapY) {
-                        // هل قفزت مها فوق العدو من الأعلى؟ (سحقه!)
                         if (player.vy > 0 && prevBottom <= en.y + 18) {
                             en.alive = false;
                             en.squashTimer = 25;
-                            player.vy = JUMP_FORCE * 0.78; // ارتداد للأعلى بعد السحق
+                            player.vy = JUMP_FORCE * 0.78;
                             player.jumpsRemaining = 1;
                             sfx.stompEnemy();
                             spawnParticles(en.x + 18, en.y + 17, ['#c084fc', '#ec4899', '#fbbf24'], 18, 1.1);
                         } else if (player.dashTimer > 0) {
-                            // الاندفاع السريع يهزم العدو أيضاً!
                             en.alive = false;
                             en.squashTimer = 25;
                             sfx.stompEnemy();
@@ -1275,7 +1377,6 @@
                     }
                 }
 
-                // تفعيل نقاط الحفظ (فوانيس الحب)
                 for (const cp of checkpoints) {
                     if (!cp.activated && Math.abs((player.x + player.w / 2) - cp.x) < 42) {
                         cp.activated = true;
@@ -1285,7 +1386,6 @@
                     }
                 }
 
-                // جمع المفتاح الذهبي
                 if (magicKey && !magicKey.collected) {
                     const dist = Math.hypot((player.x + player.w / 2) - magicKey.x, (player.y + player.h / 2) - magicKey.y);
                     if (dist < 36) {
@@ -1297,7 +1397,6 @@
                     }
                 }
 
-                // جمع النجوم السرية (3 في كل مرحلة)
                 for (const st of stars) {
                     if (st.collected) continue;
                     const dist = Math.hypot((player.x + player.w / 2) - st.x, (player.y + player.h / 2) - st.y);
@@ -1313,7 +1412,6 @@
                     }
                 }
 
-                // جمع قلوب استعادة الحياة الإضافية
                 for (const h of extraHearts) {
                     if (h.collected) continue;
                     const dist = Math.hypot((player.x + player.w / 2) - h.x, (player.y + player.h / 2) - h.y);
@@ -1326,7 +1424,6 @@
                     }
                 }
 
-                // فتح صندوق الذكرى الخاص بالمرحلة
                 if (memoryChest) {
                     if (memoryChest.bounce < 0) {
                         memoryChest.bounce += 1.2;
@@ -1340,18 +1437,15 @@
                     }
                 }
 
-                // التحقق من السقوط في الهاوية
                 if (player.y > LOGICAL_HEIGHT + 40) {
                     damagePlayer(true);
                     return;
                 }
 
-                // التحقق من الوصول إلى بوابة نهاية المرحلة أو قلعة فارس
                 if (stageGoal && player.x + player.w >= stageGoal.x + 25) {
                     handleStageReached();
                 }
 
-                // تحديث الكاميرا بسلاسة
                 const targetCamX = player.x - viewWidth * 0.34;
                 const maxCamX = Math.max(0, gameState.levelWidth - viewWidth);
                 const clampedCam = Math.max(0, Math.min(targetCamX, maxCamX));
@@ -1383,7 +1477,6 @@
                 keys.right = false;
 
                 if (gameState.currentStageId < 4) {
-                    // فتح المرحلة التالية
                     progress.unlockedStage = Math.max(progress.unlockedStage, gameState.currentStageId + 1);
                     gameState.mode = 'stageClear';
                     sfx.stageClear();
@@ -1399,7 +1492,6 @@
                     document.getElementById('stage-complete-stars').innerHTML = starsHtml.join('');
                     document.getElementById('stage-complete-modal').classList.remove('hidden');
                 } else {
-                    // الفوز النهائي في المرحلة 4 عند لقاء فارس!
                     gameState.mode = 'victory';
                     sfx.victory();
 
@@ -1423,47 +1515,27 @@
                 ctx.save();
                 ctx.scale(scaleFactor, scaleFactor);
 
-                // اهتزاز خفيف للكاميرا عند الاصطدام
                 if (gameState.screenShake > 0) {
                     const sx = (Math.random() - 0.5) * gameState.screenShake;
                     const sy = (Math.random() - 0.5) * gameState.screenShake;
                     ctx.translate(sx, sy);
                 }
 
-                // 1. رسم السماء المتدرجة والخلفيات متعددة الطبقات
                 drawStageBackground(meta);
 
                 ctx.save();
                 ctx.translate(-gameState.cameraX, 0);
 
-                // 2. رسم فوانيس نقاط الحفظ
                 drawCheckpoints();
-
-                // 3. رسم المنصات بأنواعها الثلاثة (عادية، متحركة، متلاشية)
                 drawPlatforms(meta);
-
-                // 4. رسم الأشواك الكريستالية
                 drawSpikes();
-
-                // 5. رسم المفتاح السحري والبوابة المغلقة
                 drawKeyAndDoor();
-
-                // 6. رسم بوابة المرحلة أو قلعة اللقاء الأبدي مع فارس
                 drawGoalOrCastle();
-
-                // 7. رسم صندوق الذكرى
                 drawMemoryChest();
-
-                // 8. رسم النجوم والقلوب الإضافية
                 drawCollectibles();
-
-                // 9. رسم الأعداء (غيوم الحسد)
                 drawEnemies();
-
-                // 10. رسم شخصية مها
                 drawMahaCharacter();
 
-                // 11. رسم الجزيئات
                 for (const p of particles) {
                     ctx.globalAlpha = Math.max(0, p.life);
                     ctx.fillStyle = p.color;
@@ -1484,7 +1556,6 @@
                 ctx.fillStyle = skyGrad;
                 ctx.fillRect(0, 0, viewWidth, LOGICAL_HEIGHT);
 
-                // قمر أو هالة سديمية حسب المرحلة
                 const moonX = viewWidth * 0.8;
                 const moonY = 105;
                 const glow = ctx.createRadialGradient(moonX, moonY, 10, moonX, moonY, 110);
@@ -1500,7 +1571,6 @@
                 ctx.arc(moonX, moonY, 24, 0, Math.PI * 2);
                 ctx.fill();
 
-                // النجوم / الكريستالات المتلألئة في الخلفية
                 for (const st of bgDecor) {
                     const sx = ((st.x - gameState.cameraX * st.speed) % viewWidth + viewWidth) % viewWidth;
                     const alpha = 0.3 + 0.7 * Math.abs(Math.sin(gameState.time + st.phase));
@@ -1510,7 +1580,6 @@
                     ctx.fill();
                 }
 
-                // طبقة جبال / سقف كهف بعيد (Parallax)
                 ctx.fillStyle = 'rgba(9, 4, 20, 0.65)';
                 ctx.beginPath();
                 ctx.moveTo(0, LOGICAL_HEIGHT);
@@ -1530,7 +1599,6 @@
                     if (plat.x + plat.w < gameState.cameraX - 60 || plat.x > gameState.cameraX + viewWidth + 60) continue;
 
                     ctx.save();
-                    // اهتزاز بصري للمنصة المتلاشية قبل اختفائها
                     if (plat.type === 'crumbling' && plat.timer > 0) {
                         const shake = (plat.timer / plat.maxTimer) * 3.5;
                         ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
@@ -1556,7 +1624,6 @@
                         roundRect(ctx, plat.x, plat.y, plat.w, plat.h, 11);
                         ctx.stroke();
 
-                        // أيقونة صغيرة توضح نوع المنصة الخاصة
                         if (plat.type === 'moving') {
                             ctx.fillStyle = '#bae6fd';
                             ctx.font = '12px Cairo, sans-serif';
@@ -1607,7 +1674,6 @@
                         ctx.translate(0, bob);
                     }
 
-                    // جسم غيمة الحسد البنفسجية الداكنة
                     ctx.fillStyle = '#4c0519';
                     ctx.beginPath();
                     ctx.arc(0, -16, 17, 0, Math.PI * 2);
@@ -1617,7 +1683,6 @@
                     ctx.lineWidth = 2;
                     ctx.stroke();
 
-                    // عيون غاضبة لطيفة
                     ctx.fillStyle = '#fef08a';
                     ctx.beginPath();
                     ctx.arc(-6, -18, 3, 0, Math.PI * 2);
@@ -1630,11 +1695,9 @@
 
             function drawCheckpoints() {
                 for (const cp of checkpoints) {
-                    // عمود الفانوس
                     ctx.fillStyle = '#64748b';
                     ctx.fillRect(cp.x - 2, cp.y - 52, 4, 52);
 
-                    // رأس الفانوس
                     ctx.fillStyle = cp.activated ? '#ec4899' : '#334155';
                     ctx.beginPath();
                     ctx.arc(cp.x, cp.y - 56, 10, 0, Math.PI * 2);
@@ -1733,7 +1796,6 @@
                 if (!stageGoal) return;
 
                 if (!stageGoal.isCastle) {
-                    // بوابة انتقال سحرية بين العوالم (المراحل 1 - 3)
                     const gx = stageGoal.x + stageGoal.w / 2;
                     const gy = stageGoal.y + stageGoal.h / 2;
                     const g = ctx.createRadialGradient(gx, gy, 10, gx, gy, 75);
@@ -1756,7 +1818,6 @@
                     ctx.textAlign = 'center';
                     ctx.fillText('بوابة المرحلة التالية ✨', gx, stageGoal.y - 14);
                 } else {
-                    // قلعة اللقاء الأبدي مع فارس في نهاية المرحلة 4!
                     const cx = stageGoal.x;
                     const cy = stageGoal.y;
 
@@ -1790,7 +1851,6 @@
                     const beat = 1 + Math.sin(gameState.time * 4) * 0.14;
                     drawHeartShape(ctx, cx + 120, cy - 28, 18 * beat, '#f43f5e');
 
-                    // شخصية فارس بانتظار مها أمام القلعة
                     const fx = cx + 40;
                     const fy = GROUND_Y;
                     ctx.save();
@@ -1826,7 +1886,6 @@
             }
 
             function drawMahaCharacter() {
-                // وميض شفاف أثناء الحماية المؤقتة بعد الإصابة
                 if (player.invulnTimer > 0 && Math.floor(player.invulnTimer / 4) % 2 === 0) return;
 
                 const cx = player.x + player.w / 2;
@@ -1843,14 +1902,12 @@
 
                 ctx.scale(player.facing, 1);
 
-                // الشعر
                 ctx.fillStyle = '#1e1b4b';
                 ctx.beginPath();
                 ctx.arc(-4, -35, 14, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillRect(-15, -35, 13, 23);
 
-                // الفستان الوردي
                 ctx.fillStyle = player.dashTimer > 0 ? '#fbbf24' : '#ec4899';
                 ctx.beginPath();
                 ctx.moveTo(0, -29);
@@ -1859,13 +1916,11 @@
                 ctx.closePath();
                 ctx.fill();
 
-                // الرأس
                 ctx.fillStyle = '#fed7aa';
                 ctx.beginPath();
                 ctx.arc(2, -37, 11.5, 0, Math.PI * 2);
                 ctx.fill();
 
-                // التاج الذهبي
                 ctx.fillStyle = '#fbbf24';
                 ctx.beginPath();
                 ctx.moveTo(-6, -48);
@@ -1876,13 +1931,11 @@
                 ctx.closePath();
                 ctx.fill();
 
-                // العين
                 ctx.fillStyle = '#0f172a';
                 ctx.beginPath();
                 ctx.arc(6, -38, 2.2, 0, Math.PI * 2);
                 ctx.fill();
 
-                // الأقدام
                 const legSwing = player.onGround ? Math.sin(player.animFrame * 2) * 5 : 4;
                 ctx.strokeStyle = '#fbcfe8';
                 ctx.lineWidth = 3.2;
@@ -1897,7 +1950,6 @@
                 ctx.restore();
             }
 
-            // أدوات رسم هندسية
             function roundRect(ctx, x, y, w, h, r) {
                 ctx.beginPath();
                 ctx.moveTo(x + r, y);
@@ -1979,7 +2031,6 @@
             }
 
             function gameLoop() {
-                // إيقاف الحلقة تلقائياً إذا غادر المستخدم اللعبة في البوابة
                 if (!document.getElementById('mem-canvas')) {
                     if (animationFrameId) cancelAnimationFrame(animationFrameId);
                     return;
@@ -2015,7 +2066,6 @@
                     }
                 });
 
-                // ربط أزرار اللمس للهواتف
                 const bindHoldBtn = (btnId, keyName) => {
                     const btn = document.getElementById(btnId);
                     const start = (e) => {
@@ -2059,7 +2109,6 @@
                 bindTapBtn('touch-jump', triggerJump);
                 bindTapBtn('touch-dash', triggerDash);
 
-                // أزرار الواجهة والنوافذ
                 document.getElementById('btn-start-game').addEventListener('click', () => {
                     sfx.init();
                     loadStage(1, true);
@@ -2116,6 +2165,93 @@
                     document.getElementById('sound-icon').textContent = sfx.muted ? '🔇' : '🔊';
                 });
             }
+
+            // ============================================================================
+            // نظام ملء الشاشة الإجباري + قفل الوضع الأفقي
+            // ============================================================================
+            const FullscreenManager = {
+                isFullscreen: false,
+                orientationLocked: false,
+
+                async requestFullscreen() {
+                    const el = document.documentElement;
+                    try {
+                        if (el.requestFullscreen) {
+                            await el.requestFullscreen();
+                        } else if (el.webkitRequestFullscreen) {
+                            await el.webkitRequestFullscreen();
+                        } else if (el.mozRequestFullScreen) {
+                            await el.mozRequestFullScreen();
+                        } else if (el.msRequestFullscreen) {
+                            await el.msRequestFullscreen();
+                        }
+                        this.isFullscreen = true;
+                        return true;
+                    } catch (err) {
+                        console.warn('Fullscreen request failed:', err);
+                        return false;
+                    }
+                },
+
+                async lockOrientation() {
+                    try {
+                        if (screen.orientation && screen.orientation.lock) {
+                            await screen.orientation.lock('landscape');
+                            this.orientationLocked = true;
+                            return true;
+                        }
+                    } catch (err) {
+                        console.warn('Orientation lock not supported:', err);
+                    }
+                    return false;
+                },
+
+                checkOrientation() {
+                    const overlay = document.getElementById('rotate-overlay');
+                    if (!overlay) return;
+                    const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+                    const isNarrow = window.innerWidth < 900;
+                    if (isPortrait && isNarrow) {
+                        overlay.classList.add('show');
+                    } else {
+                        overlay.classList.remove('show');
+                    }
+                },
+
+                async enterGame() {
+                    await this.requestFullscreen();
+                    await this.lockOrientation();
+                    const gate = document.getElementById('fullscreen-gate');
+                    if (gate) gate.style.display = 'none';
+                    setTimeout(() => {
+                        handleResize();
+                        this.checkOrientation();
+                    }, 350);
+                    sfx.init();
+                }
+            };
+
+            document.getElementById('btn-enter-game').addEventListener('click', async () => {
+                await FullscreenManager.enterGame();
+            });
+
+            window.addEventListener('resize', () => FullscreenManager.checkOrientation());
+            window.addEventListener('orientationchange', () => {
+                setTimeout(() => {
+                    handleResize();
+                    FullscreenManager.checkOrientation();
+                }, 300);
+            });
+            if (screen.orientation && screen.orientation.addEventListener) {
+                screen.orientation.addEventListener('change', () => {
+                    setTimeout(() => {
+                        handleResize();
+                        FullscreenManager.checkOrientation();
+                    }, 300);
+                });
+            }
+
+            FullscreenManager.checkOrientation();
 
             // التهيئة الفورية للعبة
             handleResize();
