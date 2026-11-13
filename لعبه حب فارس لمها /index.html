@@ -1,1 +1,370 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لعبة - افتحي قلبي يا مها ❤️</title>
+<style>
+*{box-sizing:border-box;font-family:Tahoma,sans-serif}
+body{margin:0;background:#ffdde1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:15px}
+.card{background:white;width:100%;max-width:450px;border-radius:25px;padding:25px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+h1{color:#e91e63;font-size:22px;margin-top:0}
+p{color:#555;line-height:1.7}
+input{width:100%;padding:13px;border:2px solid #ffc2d1;border-radius:15px;margin:10px 0;font-size:16px;text-align:center;outline:none}
+button{background:#e91e63;color:white;border:none;padding:12px 20px;border-radius:20px;font-size:16px;cursor:pointer;width:100%;margin-top:10px;transition:.2s}
+button:hover{background:#c2185b}
+.opt{background:#fff0f3;border:2px solid #ffc2d1;padding:12px;border-radius:15px;margin:8px 0;cursor:pointer;font-size:15px;transition:.2s}
+.opt:hover{background:#ffe0e8}
+.hidden{display:none}
+#gameArea{width:100%;height:260px;background:#fff0f3;border-radius:20px;position:relative;overflow:hidden;margin:10px 0;border:2px dashed #e91e63}
+.heart{position:absolute;font-size:32px;cursor:pointer;animation:fall 2.5s linear forwards}
+@keyframes fall{from{top:-40px}to{top:260px}}
+.progress{height:10px;background:#eee;border-radius:10px;overflow:hidden;margin:10px 0}
+#bar{height:100%;width:0%;background:#e91e63;transition:.3s}
+.small{font-size:13px;color:#888}
+.letter{background:#fff5f6;border:2px solid #ffc2d1;padding:18px;border-radius:15px;line-height:2;color:#444;text-align:right}
+.game-box{width:100%;min-height:180px;background:#fff0f3;border-radius:20px;padding:15px;margin:10px 0;border:2px dashed #e91e63;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px}
+.memory-card{width:65px;height:65px;background:#e91e63;color:white;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer}
+.memory-card.flipped{background:white;border:2px solid #e91e63}
+.word-chip{background:white;border:2px solid #e91e63;color:#e91e63;padding:10px 15px;border-radius:12px;cursor:pointer;font-weight:bold;font-size:16px;display:inline-block;margin:5px}
+</style>
+</head>
+<body>
 
+<!-- المرحلة 1 - كلمة السر -->
+<div class="card" id="stage1">
+<h1>🔒 موقع مقفل خصيصاً لـ مها</h1>
+<p>هاد الموقع مو لأي حدا..<br>هاد بس لـ <b>مها</b> حبة عيني ❤️<br>إذا إنتي مها، اكتبي الوعد بيناتنا لتفتحي اللعبة:</p>
+<input type="text" id="pass" placeholder="اكتبي كلمة السر هنا...">
+<button onclick="checkPass()">افتحي اللعبة يا مها ❤️</button>
+<p class="small">💡 التلميح: الوعد اللي وعدتيني ياه (احب فارس)</p>
+<p id="err1" style="color:red;font-size:14px;"></p>
+</div>
+
+<!-- المرحلة 2 - اختبار الذاكرة والأسئلة -->
+<div class="card hidden" id="stage2">
+<h1>🧠 المرحلة 1 - اختبار الذاكرة</h1>
+<p id="qText" style="font-weight:bold;font-size:16px;"></p>
+<div id="opts"></div>
+<div id="textAnsDiv" class="hidden">
+  <input type="text" id="customInputAns" placeholder="اكتبي الإجابة هنا...">
+  <button onclick="checkTextAnswer()">تأكيد الإجابة 🌸</button>
+</div>
+<p class="small" id="qCount"></p>
+</div>
+
+<!-- المرحلة 3 - التقاط القلوب -->
+<div class="card hidden" id="stage3">
+<h1>💘 المرحلة 2 - لقطي قلبي يا مها</h1>
+<p>لازم تلقطي <b>10 قلوب</b> قبل ما يوقعوا!<br>كل ما يوقع قلب بتخسري نقطة.</p>
+<div class="progress"><div id="bar"></div></div>
+<p>القلوب: <b><span id="score">0</span> / 10</b></p>
+<div id="gameArea"></div>
+<button onclick="startCatch()">بلشي اللعب 🎮</button>
+</div>
+
+<!-- المرحلة 4 - لعبة ترتيب الجملة -->
+<div class="card hidden" id="stage4">
+<h1>✍️ المرحلة 3 - رتبي جملة الحب</h1>
+<p>اضغطي على الكلمات بالترتيب الصحيح لتكوين جملة: <br><b>"أنا بموت فيكي يا أغلى مها"</b></p>
+<div class="game-box" id="sentenceBox"></div>
+<p style="font-size:14px;color:#e91e63;" id="sentenceMsg"></p>
+<button onclick="resetSentence()">إعادة ترتيب 🔄</button>
+</div>
+
+<!-- المرحلة 5 - لعبة الذاكرة (مطابقة الصور) -->
+<div class="card hidden" id="stage5">
+<h1>🧩 المرحلة 4 - طابقي القلوب والورود</h1>
+<p>افتحي البطاقات واكتشفي الأشكال المتطابقة ❤️</p>
+<div class="game-box" id="memoryBoard"></div>
+</div>
+
+<!-- المرحلة 6 - لعبة تركيب اسم الدلع (اللعبة الجديدة رقم 5) -->
+<div class="card hidden" id="stage6">
+<h1>💖 المرحلة 5 - فككي واجمعي اسم الدلع</h1>
+<p>رتبي الحروف التالية لتكتبي كلمة دلالك عندي: <b>( ي و ر ح ي )</b> معكوسة أو مبعثرة</p>
+<div class="game-box" id="scrambleBox"></div>
+<p style="font-size:14px;color:#e91e63;" id="scrambleMsg"></p>
+<button onclick="resetScramble()">إعادة المحاولة 🔄</button>
+</div>
+
+<!-- المرحلة 7 - لعبة المفتاح الصحيح -->
+<div class="card hidden" id="stage7">
+<h1>🔑 المرحلة 6 - مفتاح قلب فارسك</h1>
+<p>اضغطي على الزر الصح لتفتحي القفل وتوصلي لرسالتك الأخيرة:</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px;">
+  <button onclick="checkLock(false)">مفتاح الورد 🌹</button>
+  <button onclick="checkLock(false)">مفتاح الحب 💖</button>
+  <button onclick="checkLock(true)">مفتاح مها وفارس 🔐</button>
+  <button onclick="checkLock(false)">مفتاح الروح ✨</button>
+</div>
+</div>
+
+<!-- المرحلة 8 - النهاية والرسالة الشعرية -->
+<div class="card hidden" id="stage8">
+<h1>🎉 كفووو يا مها! خلصتي الـ 6 ألعاب!</h1>
+<p>كنت عارف إنك رح توصلي، لأنك الوحيدة اللي ساكنة بالقلب والبال ❤️</p>
+<div class="letter">
+<div style="text-align:center;font-weight:bold;color:#e91e63;font-size:18px;margin-bottom:10px;">إلى أميرة قلبي.. مها ❤️</div>
+سألتُ الشوقَ هل للحبِّ حدٌّ؟<br>
+فقالَ الحبُّ: في "مها" التمامُ..<br>
+صنعتُ لكِ التحدي كي تريْهِ<br>
+بأنَّ الودَّ فِعلٌ واهتمامُ..<br><br>
+أنا ما بينَ أهلِ العلمِ أُمضي<br>
+سنيني، والمنى منكِ السلامُ..<br>
+فيا رُوحاً سَكَنْتِ الروحَ دوماً<br>
+لكِ القلبُ المُتيَّمُ والغرامُ..<br><br>
+<b>كل عيد حب وأنتي حبيبتي وأغلى ما أملك ❤️</b><br>
+- من فارسك ومجنونك
+</div>
+<button onclick="alert('خدي سكرين شوت وابعتيلو، وقليلو: قبلت هديتك يا فارسي ❤️')">اضغطي هون إذا قبلتي هديتي ❤️</button>
+<p class="small" style="margin-top:10px;">هدية يوم الحب | صُممت بكل حب لـ مها فقط 🌹</p>
+</div>
+
+<script>
+const PASSWORD = "احب فارس"; 
+
+const QUESTIONS = [
+  { q: "متى تعرفنا على بعض؟", opts: ["قبل رمضان بأسبوع", "برمضان", "بالعيد", "قبل رمضان بشهر"], ans: 0 },
+  { q: "وين أول مرة حكينا فيها؟", opts: ["واتساب", "انستا", "لعبة بلوم مان غو", "بالحارة"], ans: 2 },
+  { q: "شو أكثر أكلة بحبها؟", opts: ["شاورما", "الرز بحليب", "مندي", "بيتزا"], ans: 1 },
+  { q: "شو لقبي اللي بتحبي تناديلي فيه؟", opts: ["أبو أهل العلم والنظارات", "فارس", "حبيبي", "يلوحي (يروحي)"], ans: 0 },
+  { q: "متى تاريخ ميلادي؟ (اكتبي بالشكل التالي: 2009/6/16)", type: "text", ans: "2009/6/16" }
+];
+
+function checkPass(){
+  let v = document.getElementById('pass').value.trim();
+  if(v === PASSWORD){
+    document.getElementById('stage1').classList.add('hidden');
+    document.getElementById('stage2').classList.remove('hidden');
+    showQ();
+  } else {
+    document.getElementById('err1').innerText = "غلط يا مها! ركزي بالأحرف (احب فارس) ❤️";
+  }
+}
+
+let qi=0;
+function showQ(){
+  if(qi>=QUESTIONS.length){
+    document.getElementById('stage2').classList.add('hidden');
+    document.getElementById('stage3').classList.remove('hidden');
+    return;
+  }
+  let q = QUESTIONS[qi];
+  document.getElementById('qText').innerText = q.q;
+  document.getElementById('qCount').innerText = "سؤال " + (qi+1) + " من " + QUESTIONS.length;
+  
+  if(q.type === "text") {
+    document.getElementById('opts').innerHTML = "";
+    document.getElementById('textAnsDiv').classList.remove('hidden');
+  } else {
+    document.getElementById('textAnsDiv').classList.add('hidden');
+    let html="";
+    q.opts.forEach((o,i)=>{ html+=`<div class="opt" onclick="answer(${i})">${o}</div>` });
+    document.getElementById('opts').innerHTML=html;
+  }
+}
+
+function answer(i){
+  if(i===QUESTIONS[qi].ans){ 
+    qi++; 
+    showQ(); 
+  } else { 
+    alert("لاااا غلط يا مها! ارجعي حاولي ركزي 😢"); 
+    qi=0; 
+    showQ(); 
+  }
+}
+
+function checkTextAnswer(){
+  let val = document.getElementById('customInputAns').value.trim();
+  if(val === QUESTIONS[qi].ans){
+    document.getElementById('customInputAns').value = "";
+    qi++;
+    showQ();
+  } else {
+    alert("التاريخ غلط يا قلبي! تذكري (2009/6/16) ❤️ جربي تاني");
+  }
+}
+
+// لعبة التقاط القلوب
+let score=0, playing=false;
+function startCatch(){
+  if(playing) return; 
+  playing=true; 
+  score=0; 
+  update();
+  let area=document.getElementById('gameArea'); 
+  area.innerHTML="";
+  let spawn=setInterval(()=>{
+    if(score>=10){ 
+      clearInterval(spawn); 
+      playing=false;
+      document.getElementById('stage3').classList.add('hidden');
+      document.getElementById('stage4').classList.remove('hidden');
+      initSentenceGame();
+      return;
+    }
+    let h=document.createElement('div'); 
+    h.className='heart'; 
+    h.innerText='❤️';
+    h.style.left=Math.random()*85+'%';
+    h.onclick=()=>{ score++; update(); h.remove(); };
+    area.appendChild(h);
+    setTimeout(()=>{ if(h.parentNode){ h.remove(); score=Math.max(0,score-1); update(); } },2500);
+  },700);
+}
+function update(){
+  document.getElementById('score').innerText=score;
+  document.getElementById('bar').style.width=(score*10)+'%';
+}
+
+// لعبة ترتيب الجملة
+const correctSentence = ["أنا", "بموت", "فيكي", "يا", "أغلى", "مها"];
+let currentSentenceUser = [];
+
+function initSentenceGame(){
+  let box = document.getElementById('sentenceBox');
+  box.innerHTML = "";
+  currentSentenceUser = [];
+  document.getElementById('sentenceMsg').innerText = "";
+  
+  let shuffledWords = [...correctSentence].sort(() => 0.5 - Math.random());
+  shuffledWords.forEach(word => {
+    let span = document.createElement('span');
+    span.className = 'word-chip';
+    span.innerText = word;
+    span.onclick = () => selectWord(span, word);
+    box.appendChild(span);
+  });
+}
+
+function selectWord(element, word){
+  element.style.display = 'none';
+  currentSentenceUser.push(word);
+  
+  if(currentSentenceUser.length === correctSentence.length){
+    let isCorrect = currentSentenceUser.every((w, idx) => w === correctSentence[idx]);
+    if(isCorrect){
+      document.getElementById('sentenceMsg').innerText = "كفووو! رتبتيها صح يا عيوني ❤️";
+      setTimeout(() => {
+        document.getElementById('stage4').classList.add('hidden');
+        document.getElementById('stage5').classList.remove('hidden');
+        initMemoryGame();
+      }, 1200);
+    } else {
+      document.getElementById('sentenceMsg').innerText = "خربطتي بالترتيب! جربي مرة تانية ❤️";
+      setTimeout(initSentenceGame, 1500);
+    }
+  }
+}
+
+function resetSentence(){
+  initSentenceGame();
+}
+
+// لعبة الذاكرة
+const memoryIcons = ['❤️', '❤️', '🌹', '🌹', '👑', '👑', '🎁', '🎁'];
+let flippedCards = [], matchedPairs = 0;
+
+function initMemoryGame(){
+  let board = document.getElementById('memoryBoard');
+  board.innerHTML = "";
+  matchedPairs = 0;
+  let shuffled = memoryIcons.sort(() => 0.5 - Math.random());
+  shuffled.forEach((icon) => {
+    let card = document.createElement('div');
+    card.className = 'memory-card';
+    card.dataset.icon = icon;
+    card.innerText = '❓';
+    card.onclick = () => flipCard(card);
+    board.board = board;
+    board.appendChild(card);
+  });
+}
+
+function flipCard(card){
+  if(flippedCards.length < 2 && !card.classList.contains('flipped')){
+    card.classList.add('flipped');
+    card.innerText = card.dataset.icon;
+    flippedCards.push(card);
+
+    if(flippedCards.length === 2){
+      if(flippedCards[0].dataset.icon === flippedCards[1].dataset.icon){
+        matchedPairs++;
+        flippedCards = [];
+        if(matchedPairs === 4){
+          setTimeout(() => {
+            document.getElementById('stage5').classList.add('hidden');
+            document.getElementById('stage6').classList.remove('hidden');
+            initScrambleGame();
+          }, 800);
+        }
+      } else {
+        setTimeout(() => {
+          flippedCards.forEach(c => {
+            c.classList.remove('flipped');
+            c.innerText = '❓';
+          });
+          flippedCards = [];
+        }, 800);
+      }
+    }
+  }
+}
+
+// لعبة تركيب كلمة "يروحي" (اللعبة الجديدة)
+const correctWordLetters = ["ي", "ر", "و", "ح", "ي"];
+let currentUserLetters = [];
+
+function initScrambleGame(){
+  let box = document.getElementById('scrambleBox');
+  box.innerHTML = "";
+  currentUserLetters = [];
+  document.getElementById('scrambleMsg').innerText = "";
+
+  let shuffledLetters = [...correctWordLetters].sort(() => 0.5 - Math.random());
+  shuffledLetters.forEach((letter) => {
+    let span = document.createElement('span');
+    span.className = 'word-chip';
+    span.innerText = letter;
+    span.onclick = () => selectScrambleLetter(span, letter);
+    box.appendChild(span);
+  });
+}
+
+function selectScrambleLetter(element, letter){
+  element.style.display = 'none';
+  currentUserLetters.push(letter);
+
+  if(currentUserLetters.length === correctWordLetters.length){
+    let isCorrect = currentUserLetters.every((l, idx) => l === correctWordLetters[idx]);
+    if(isCorrect){
+      document.getElementById('scrambleMsg').innerText = "صح لسانك يا روحي! رتبتيها صح ❤️";
+      setTimeout(() => {
+        document.getElementById('stage6').classList.add('hidden');
+        document.getElementById('stage7').classList.remove('hidden');
+      }, 1200);
+    } else {
+      document.getElementById('scrambleMsg').innerText = "خطأ بالترتيب! جربي مرة تانية 😉";
+      setTimeout(initScrambleGame, 1500);
+    }
+  }
+}
+
+function resetScramble(){
+  initScrambleGame();
+}
+
+// لعبة المفتاح
+function checkLock(isCorrect){
+  if(isCorrect){
+    document.getElementById('stage7').classList.add('hidden');
+    document.getElementById('stage8').classList.remove('hidden');
+  } else {
+    alert("مفتاح غلط! جربي خيار ثاني بيفتح قلب فارسك 😉❤️");
+  }
+}
+</script>
+</body>
+</html>
